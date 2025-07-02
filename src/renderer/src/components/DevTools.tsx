@@ -50,20 +50,33 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl, targetUrl }) => {
           const isElectron = window.electronAPI !== undefined
           let devtoolsUrl: string
 
-          if (isElectron) {
-            // 일렉트론 환경에서는 절대 경로 사용
-            const devtoolsPath = window.electronAPI.getDevToolsPath()
-            devtoolsUrl = `file://${devtoolsPath}`
-          } else {
-            // 웹 환경에서는 상대 경로 사용
-            devtoolsUrl = '/devtools/front_end/inspector.html'
-          }
+          devtoolsUrl = '/devtools/front_end/inspector.html'
 
           // Add query parameters if provided
           const params = new URLSearchParams()
+
+          // 웹소켓 연결 파라미터 (가장 중요)
           if (webSocketUrl) {
-            params.append('ws', webSocketUrl)
+            // WebSocket URL에서 호스트와 포트 추출
+            try {
+              const wsUrl = new URL(webSocketUrl)
+              // React Native의 경우 전체 WebSocket URL을 사용
+              if (webSocketUrl.includes('inspector/debug')) {
+                // React Native Inspector URL
+                const wsParam = `${wsUrl.hostname}:${wsUrl.port || '8081'}`
+                params.append('ws', wsParam)
+                console.log('React Native WebSocket parameter set:', wsParam)
+              } else {
+                // 일반적인 WebSocket URL
+                const wsParam = `${wsUrl.hostname}:${wsUrl.port || '9222'}`
+                params.append('ws', wsParam)
+                console.log('WebSocket parameter set:', wsParam)
+              }
+            } catch (error) {
+              console.error('Invalid WebSocket URL:', error)
+            }
           }
+
           if (targetUrl) {
             params.append('target', targetUrl)
           }
@@ -76,9 +89,35 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl, targetUrl }) => {
           params.append('remoteFrontend', 'true')
 
           // React Native 특화 파라미터들
-          params.append('nodeFrontend', 'false')
+          params.append('nodeFrontend', 'true')
           params.append('hasOtherClients', 'false')
           params.append('browserConnection', 'false')
+
+          // 추가 연결 파라미터들
+          params.append('panel', 'sources') // 소스 패널 기본 선택
+          params.append('debugFrontend', 'true') // 디버그 프론트엔드 활성화
+
+          // Elements Inspector 비활성화
+          params.append('disableElements', 'true')
+          params.append('hideElements', 'true')
+          params.append('showElements', 'false')
+          params.append('elementsPanel', 'false')
+          params.append('disableDOM', 'true')
+          params.append('hideDOM', 'true')
+
+          // Device Mode/브라우저 미리보기 비활성화
+          params.append('disableDeviceMode', 'true')
+          params.append('hideDeviceMode', 'true')
+          params.append('showDeviceMode', 'false')
+          params.append('deviceMode', 'false')
+          params.append('disableResponsive', 'true')
+          params.append('hideResponsive', 'true')
+          params.append('showResponsive', 'false')
+          params.append('responsive', 'false')
+          params.append('disableEmulation', 'true')
+          params.append('hideEmulation', 'true')
+          params.append('showEmulation', 'false')
+          params.append('emulation', 'false')
 
           if (params.toString()) {
             devtoolsUrl += `?${params.toString()}`
@@ -90,6 +129,50 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl, targetUrl }) => {
             setIsLoading(false)
             setError(null)
             console.log('DevTools loaded successfully')
+
+            // DevTools 로드 후 Elements 패널 숨기기
+            try {
+              const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
+              if (iframeDoc) {
+                // Elements 패널 숨기기
+                const elementsPanel = iframeDoc.querySelector('[data-panel-name="elements"]')
+                if (elementsPanel) {
+                  elementsPanel.style.display = 'none'
+                }
+
+                // Elements 탭 숨기기
+                const elementsTab = iframeDoc.querySelector('[data-tab-id="elements"]')
+                if (elementsTab) {
+                  elementsTab.style.display = 'none'
+                }
+
+                // Elements 관련 UI 요소들 숨기기
+                const elementsElements = iframeDoc.querySelectorAll(
+                  '[data-panel-name*="elements"], [data-tab-id*="elements"]'
+                )
+                for (const el of elementsElements) {
+                  ;(el as HTMLElement).style.display = 'none'
+                }
+
+                // Device Mode 툴바 숨기기
+                const deviceModeElements = iframeDoc.querySelectorAll(
+                  '[data-panel-name*="device"], [data-tab-id*="device"], [data-panel-name*="emulation"], [data-tab-id*="emulation"], [data-panel-name*="responsive"], [data-tab-id*="responsive"]'
+                )
+                for (const el of deviceModeElements) {
+                  ;(el as HTMLElement).style.display = 'none'
+                }
+
+                // Device Mode 툴바 버튼들 숨기기
+                const deviceModeButtons = iframeDoc.querySelectorAll(
+                  '[title*="Toggle device"], [title*="device mode"], [title*="responsive"], [title*="emulation"]'
+                )
+                for (const el of deviceModeButtons) {
+                  ;(el as HTMLElement).style.display = 'none'
+                }
+              }
+            } catch (error) {
+              console.log('Elements panel hiding failed (expected in some cases):', error)
+            }
 
             // DevTools 로드 후 CDP 연결 시도
             if (webSocketUrl) {
@@ -109,12 +192,29 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl, targetUrl }) => {
               const htmlContent = await window.electronAPI.getDevToolsHTML()
               // DevTools URL에 필요한 파라미터들 추가
               let devtoolsUrl = './devtools/front_end/inspector.html'
-
+              console.log('devtoolsUrl', devtoolsUrl)
               const params = new URLSearchParams()
 
               // React Native 디버깅을 위한 필수 파라미터들
               if (webSocketUrl) {
-                params.append('ws', webSocketUrl)
+                // WebSocket URL에서 호스트와 포트 추출
+                try {
+                  const wsUrl = new URL(webSocketUrl)
+                  // React Native의 경우 전체 WebSocket URL을 사용
+                  if (webSocketUrl.includes('inspector/debug')) {
+                    // React Native Inspector URL
+                    const wsParam = `${wsUrl.hostname}:${wsUrl.port || '8081'}`
+                    params.append('ws', wsParam)
+                    console.log('React Native WebSocket parameter set:', wsParam)
+                  } else {
+                    // 일반적인 WebSocket URL
+                    const wsParam = `${wsUrl.hostname}:${wsUrl.port || '9222'}`
+                    params.append('ws', wsParam)
+                    console.log('WebSocket parameter set:', wsParam)
+                  }
+                } catch (error) {
+                  console.error('Invalid WebSocket URL:', error)
+                }
               }
               if (targetUrl) {
                 params.append('target', targetUrl)
@@ -127,14 +227,64 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl, targetUrl }) => {
               params.append('v8only', 'false')
               params.append('remoteFrontend', 'true')
 
+              // 브라우저 관련 기능 비활성화
+              params.append('disableBrowserFeatures', 'true')
+              params.append('disableExtensions', 'true')
+              params.append('disableWebSecurity', 'true')
+              params.append('disableSiteIsolationTrials', 'true')
+              params.append('disableBackgroundNetworking', 'true')
+              params.append('disableBackgroundTimerThrottling', 'true')
+              params.append('disableClientSidePhishingDetection', 'true')
+              params.append('disableComponentUpdate', 'true')
+              params.append('disableDefaultApps', 'true')
+              params.append('disableDomainReliability', 'true')
+              params.append('disableFieldTrialConfig', 'true')
+              params.append('disableHangMonitor', 'true')
+              params.append('disableIpcFloodingProtection', 'true')
+              params.append('disablePromptOnRepost', 'true')
+              params.append('disableRendererBackgrounding', 'true')
+              params.append('disableSyncPreference', 'true')
+              params.append('disableTranslate', 'true')
+              params.append('noFirstRun', 'true')
+              params.append('noDefaultBrowserCheck', 'true')
+              params.append('noSandbox', 'true')
+
               // React Native 특화 파라미터들
-              params.append('nodeFrontend', 'false')
+              params.append('nodeFrontend', 'true')
               params.append('hasOtherClients', 'false')
               params.append('browserConnection', 'false')
+
+              // 추가 연결 파라미터들
+              params.append('panel', 'sources') // 소스 패널 기본 선택
+              params.append('debugFrontend', 'true') // 디버그 프론트엔드 활성화
+
+              // Elements Inspector 비활성화
+              params.append('disableElements', 'true')
+              params.append('hideElements', 'true')
+              params.append('showElements', 'false')
+              params.append('elementsPanel', 'false')
+              params.append('disableDOM', 'true')
+              params.append('hideDOM', 'true')
+
+              // Device Mode/브라우저 미리보기 비활성화
+              params.append('disableDeviceMode', 'true')
+              params.append('hideDeviceMode', 'true')
+              params.append('showDeviceMode', 'false')
+              params.append('deviceMode', 'false')
+              params.append('disableResponsive', 'true')
+              params.append('hideResponsive', 'true')
+              params.append('showResponsive', 'false')
+              params.append('responsive', 'false')
+              params.append('disableEmulation', 'true')
+              params.append('hideEmulation', 'true')
+              params.append('showEmulation', 'false')
+              params.append('emulation', 'false')
 
               if (params.toString()) {
                 devtoolsUrl += `?${params.toString()}`
               }
+
+              console.log('devtoolsUrl', devtoolsUrl)
 
               iframe.src = devtoolsUrl
             } catch (err) {
@@ -201,7 +351,7 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl, targetUrl }) => {
         style={{
           position: 'absolute',
           top: '10px',
-          right: '10px',
+          left: '10px',
           zIndex: 1000,
           padding: '0.5rem',
           borderRadius: '4px',
@@ -245,8 +395,8 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl, targetUrl }) => {
         title="Chrome DevTools"
         style={{
           border: 'none',
-          width: '100%',
-          height: '100%',
+          width: '100vw',
+          height: '100vh',
           display: isLoading ? 'none' : 'block'
         }}
       />

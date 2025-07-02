@@ -3,8 +3,8 @@ import './App.css';
 import DevTools from './components/DevTools';
 
 function App() {
-  const [webSocketUrl, setWebSocketUrl] = useState('ws://localhost:8081/debugger-proxy?role=client');
-  const [targetUrl, setTargetUrl] = useState('http://localhost:8081');
+  const [webSocketUrl, setWebSocketUrl] = useState('ws://localhost:9222');
+  const [targetUrl, setTargetUrl] = useState('http://localhost:9222');
 
   return (
     <div className="App">
@@ -17,7 +17,7 @@ function App() {
                 type="text"
                 value={webSocketUrl}
                 onChange={(e) => setWebSocketUrl(e.target.value)}
-                placeholder="ws://localhost:8081/debugger-proxy?role=client"
+                placeholder="ws://localhost:9222"
               />
             </div>
 
@@ -27,7 +27,7 @@ function App() {
                 type="text"
                 value={targetUrl}
                 onChange={(e) => setTargetUrl(e.target.value)}
-                placeholder="http://localhost:8081"
+                placeholder="http://localhost:9222"
               />
             </div>
           </div>

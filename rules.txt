@@ -1,0 +1,561 @@
+## Correctness (176):
+Code that is outright wrong or useless.
+| Rule name                                           | Source     | Default | Fixable? |
+| --------------------------------------------------- | ---------- | ------- | -------- |
+| for-direction                                       | eslint     | ✅      | ⚠️🛠️️ |
+| no-async-promise-executor                           | eslint     | ✅      |          |
+| no-caller                                           | eslint     | ✅      |          |
+| no-class-assign                                     | eslint     | ✅      |          |
+| no-compare-neg-zero                                 | eslint     | ✅      | 🛠️💡 |
+| no-cond-assign                                      | eslint     | ✅      |          |
+| no-const-assign                                     | eslint     | ✅      |          |
+| no-constant-binary-expression                       | eslint     | ✅      |          |
+| no-constant-condition                               | eslint     | ✅      |          |
+| no-control-regex                                    | eslint     | ✅      |          |
+| no-debugger                                         | eslint     | ✅      | 🛠️ |
+| no-delete-var                                       | eslint     | ✅      |          |
+| no-dupe-class-members                               | eslint     | ✅      |          |
+| no-dupe-else-if                                     | eslint     | ✅      |          |
+| no-dupe-keys                                        | eslint     | ✅      |          |
+| no-duplicate-case                                   | eslint     | ✅      |          |
+| no-empty-character-class                            | eslint     | ✅      |          |
+| no-empty-pattern                                    | eslint     | ✅      |          |
+| no-empty-static-block                               | eslint     | ✅      | 💡    |
+| no-eval                                             | eslint     | ✅      |          |
+| no-ex-assign                                        | eslint     | ✅      |          |
+| no-extra-boolean-cast                               | eslint     | ✅      | 🛠️💡 |
+| no-func-assign                                      | eslint     | ✅      |          |
+| no-global-assign                                    | eslint     | ✅      |          |
+| no-import-assign                                    | eslint     | ✅      |          |
+| no-invalid-regexp                                   | eslint     | ✅      |          |
+| no-irregular-whitespace                             | eslint     | ✅      |          |
+| no-loss-of-precision                                | eslint     | ✅      |          |
+| no-new-native-nonconstructor                        | eslint     | ✅      |          |
+| no-nonoctal-decimal-escape                          | eslint     | ✅      | 🚧    |
+| no-obj-calls                                        | eslint     | ✅      |          |
+| no-self-assign                                      | eslint     | ✅      |          |
+| no-setter-return                                    | eslint     | ✅      |          |
+| no-shadow-restricted-names                          | eslint     | ✅      |          |
+| no-sparse-arrays                                    | eslint     | ✅      |          |
+| no-this-before-super                                | eslint     | ✅      |          |
+| no-unsafe-finally                                   | eslint     | ✅      |          |
+| no-unsafe-negation                                  | eslint     | ✅      | 🛠️ |
+| no-unsafe-optional-chaining                         | eslint     | ✅      |          |
+| no-unused-labels                                    | eslint     | ✅      | 🛠️ |
+| no-unused-private-class-members                     | eslint     | ✅      |          |
+| no-unused-vars                                      | eslint     | ✅      | ⚠️💡 |
+| no-useless-backreference                            | eslint     | ✅      |          |
+| no-useless-catch                                    | eslint     | ✅      |          |
+| no-useless-escape                                   | eslint     | ✅      | 🛠️ |
+| no-useless-rename                                   | eslint     | ✅      |          |
+| no-with                                             | eslint     | ✅      |          |
+| require-yield                                       | eslint     | ✅      |          |
+| use-isnan                                           | eslint     | ✅      | 🛠️ |
+| valid-typeof                                        | eslint     | ✅      | 🛠️ |
+| default                                             | import     | ✅      |          |
+| namespace                                           | import     | ✅      |          |
+| expect-expect                                       | jest       | ✅      |          |
+| no-conditional-expect                               | jest       | ✅      |          |
+| no-disabled-tests                                   | jest       | ✅      |          |
+| no-export                                           | jest       | ✅      |          |
+| no-focused-tests                                    | jest       | ✅      | 🛠️ |
+| no-standalone-expect                                | jest       | ✅      |          |
+| require-to-throw-message                            | jest       | ✅      |          |
+| valid-describe-callback                             | jest       | ✅      |          |
+| valid-expect                                        | jest       | ✅      |          |
+| valid-title                                         | jest       | ✅      | 🛠️ |
+| check-property-names                                | jsdoc      | ✅      |          |
+| check-tag-names                                     | jsdoc      | ✅      |          |
+| implements-on-classes                               | jsdoc      | ✅      |          |
+| no-defaults                                         | jsdoc      | ✅      |          |
+| require-property                                    | jsdoc      | ✅      |          |
+| require-property-description                        | jsdoc      | ✅      |          |
+| require-property-name                               | jsdoc      | ✅      |          |
+| require-property-type                               | jsdoc      | ✅      |          |
+| require-yields                                      | jsdoc      | ✅      |          |
+| alt-text                                            | jsx_a11y   | ✅      |          |
+| anchor-has-content                                  | jsx_a11y   | ✅      | 💡    |
+| anchor-is-valid                                     | jsx_a11y   | ✅      |          |
+| aria-activedescendant-has-tabindex                  | jsx_a11y   | ✅      |          |
+| aria-props                                          | jsx_a11y   | ✅      | 🛠️ |
+| aria-role                                           | jsx_a11y   | ✅      |          |
+| aria-unsupported-elements                           | jsx_a11y   | ✅      | 🛠️ |
+| autocomplete-valid                                  | jsx_a11y   | ✅      |          |
+| click-events-have-key-events                        | jsx_a11y   | ✅      |          |
+| heading-has-content                                 | jsx_a11y   | ✅      |          |
+| html-has-lang                                       | jsx_a11y   | ✅      |          |
+| iframe-has-title                                    | jsx_a11y   | ✅      |          |
+| img-redundant-alt                                   | jsx_a11y   | ✅      |          |
+| label-has-associated-control                        | jsx_a11y   | ✅      |          |
+| lang                                                | jsx_a11y   | ✅      |          |
+| media-has-caption                                   | jsx_a11y   | ✅      |          |
+| mouse-events-have-key-events                        | jsx_a11y   | ✅      |          |
+| no-access-key                                       | jsx_a11y   | ✅      | 💡    |
+| no-aria-hidden-on-focusable                         | jsx_a11y   | ✅      | 🛠️ |
+| no-autofocus                                        | jsx_a11y   | ✅      | 🛠️ |
+| no-distracting-elements                             | jsx_a11y   | ✅      |          |
+| no-noninteractive-tabindex                          | jsx_a11y   | ✅      |          |
+| no-redundant-roles                                  | jsx_a11y   | ✅      | 🛠️ |
+| prefer-tag-over-role                                | jsx_a11y   | ✅      |          |
+| role-has-required-aria-props                        | jsx_a11y   | ✅      |          |
+| role-supports-aria-props                            | jsx_a11y   | ✅      |          |
+| scope                                               | jsx_a11y   | ✅      | 🛠️ |
+| tabindex-no-positive                                | jsx_a11y   | ✅      | 🚧    |
+| google-font-display                                 | nextjs     | ✅      |          |
+| google-font-preconnect                              | nextjs     | ✅      |          |
+| inline-script-id                                    | nextjs     | ✅      |          |
+| next-script-for-ga                                  | nextjs     | ✅      |          |
+| no-assign-module-variable                           | nextjs     | ✅      |          |
+| no-async-client-component                           | nextjs     | ✅      |          |
+| no-before-interactive-script-outside-document       | nextjs     | ✅      |          |
+| no-css-tags                                         | nextjs     | ✅      |          |
+| no-document-import-in-page                          | nextjs     | ✅      |          |
+| no-duplicate-head                                   | nextjs     | ✅      |          |
+| no-head-element                                     | nextjs     | ✅      |          |
+| no-head-import-in-document                          | nextjs     | ✅      |          |
+| no-img-element                                      | nextjs     | ✅      | 🚧    |
+| no-page-custom-font                                 | nextjs     | ✅      |          |
+| no-script-component-in-head                         | nextjs     | ✅      |          |
+| no-styled-jsx-in-document                           | nextjs     | ✅      |          |
+| no-sync-scripts                                     | nextjs     | ✅      |          |
+| no-title-in-document-head                           | nextjs     | ✅      |          |
+| no-typos                                            | nextjs     | ✅      | 🚧    |
+| no-unwanted-polyfillio                              | nextjs     | ✅      |          |
+| bad-array-method-on-arguments                       | oxc        | ✅      |          |
+| bad-char-at-comparison                              | oxc        | ✅      |          |
+| bad-comparison-sequence                             | oxc        | ✅      |          |
+| bad-min-max-func                                    | oxc        | ✅      |          |
+| bad-object-literal-comparison                       | oxc        | ✅      |          |
+| bad-replace-all-arg                                 | oxc        | ✅      |          |
+| const-comparisons                                   | oxc        | ✅      |          |
+| double-comparisons                                  | oxc        | ✅      | 🛠️ |
+| erasing-op                                          | oxc        | ✅      | ⚠️🛠️️ |
+| missing-throw                                       | oxc        | ✅      | 💡    |
+| number-arg-out-of-range                             | oxc        | ✅      |          |
+| only-used-in-recursion                              | oxc        | ✅      | ⚠️🛠️️ |
+| uninvoked-array-callback                            | oxc        | ✅      |          |
+| no-callback-in-promise                              | promise    | ✅      |          |
+| no-new-statics                                      | promise    | ✅      | 🛠️ |
+| valid-params                                        | promise    | ✅      |          |
+| exhaustive-deps                                     | react      | ✅      |          |
+| forward-ref-uses-ref                                | react      | ✅      | 💡    |
+| jsx-key                                             | react      | ✅      |          |
+| jsx-no-duplicate-props                              | react      | ✅      |          |
+| jsx-no-target-blank                                 | react      | ✅      |          |
+| jsx-no-undef                                        | react      | ✅      |          |
+| jsx-props-no-spread-multi                           | react      | ✅      | 🛠️ |
+| no-children-prop                                    | react      | ✅      |          |
+| no-danger-with-children                             | react      | ✅      |          |
+| no-direct-mutation-state                            | react      | ✅      |          |
+| no-find-dom-node                                    | react      | ✅      |          |
+| no-is-mounted                                       | react      | ✅      |          |
+| no-render-return-value                              | react      | ✅      |          |
+| no-string-refs                                      | react      | ✅      |          |
+| void-dom-elements-no-children                       | react      | ✅      |          |
+| no-duplicate-enum-values                            | typescript | ✅      |          |
+| no-extra-non-null-assertion                         | typescript | ✅      |          |
+| no-misused-new                                      | typescript | ✅      |          |
+| no-non-null-asserted-optional-chain                 | typescript | ✅      | 🛠️ |
+| no-this-alias                                       | typescript | ✅      |          |
+| no-unnecessary-parameter-property-assignment        | typescript | ✅      | 💡    |
+| no-unsafe-declaration-merging                       | typescript | ✅      |          |
+| no-useless-empty-export                             | typescript | ✅      | 🛠️ |
+| no-wrapper-object-types                             | typescript | ✅      | 🛠️ |
+| prefer-as-const                                     | typescript | ✅      | 🛠️ |
+| triple-slash-reference                              | typescript | ✅      |          |
+| no-await-in-promise-methods                         | unicorn    | ✅      |          |
+| no-empty-file                                       | unicorn    | ✅      |          |
+| no-invalid-fetch-options                            | unicorn    | ✅      |          |
+| no-invalid-remove-event-listener                    | unicorn    | ✅      |          |
+| no-new-array                                        | unicorn    | ✅      | 🚧    |
+| no-single-promise-in-promise-methods                | unicorn    | ✅      | 🛠️ |
+| no-thenable                                         | unicorn    | ✅      |          |
+| no-unnecessary-await                                | unicorn    | ✅      | 🛠️ |
+| no-useless-fallback-in-spread                       | unicorn    | ✅      | 🛠️ |
+| no-useless-length-check                             | unicorn    | ✅      | 🚧    |
+| no-useless-spread                                   | unicorn    | ✅      | ⚠️🛠️️ |
+| prefer-set-size                                     | unicorn    | ✅      | 🛠️ |
+| prefer-string-starts-ends-with                      | unicorn    | ✅      | 🛠️ |
+| no-conditional-tests                                | vitest     | ✅      |          |
+| require-local-test-context-for-concurrent-snapshots | vitest     | ✅      | 🚧    |
+
+## Perf (10):
+Code that can be written to run faster.
+| Rule name                   | Source     | Default | Fixable? |
+| --------------------------- | ---------- | ------- | -------- |
+| no-await-in-loop            | eslint     |         |          |
+| no-useless-call             | eslint     |         |          |
+| no-accumulating-spread      | oxc        |         |          |
+| no-array-index-key          | react      |         |          |
+| jsx-no-jsx-as-prop          | react_perf |         |          |
+| jsx-no-new-array-as-prop    | react_perf |         |          |
+| jsx-no-new-function-as-prop | react_perf |         |          |
+| jsx-no-new-object-as-prop   | react_perf |         |          |
+| prefer-array-find           | unicorn    |         | 🚧    |
+| prefer-set-has              | unicorn    |         | ⚠️🛠️️ |
+
+## Restriction (66):
+Lints which prevent the use of language and library features. Must not be enabled as a whole, should be considered on a case-by-case basis before enabling.
+| Rule name                               | Source     | Default | Fixable? |
+| --------------------------------------- | ---------- | ------- | -------- |
+| default-case                            | eslint     |         |          |
+| no-alert                                | eslint     |         |          |
+| no-bitwise                              | eslint     |         |          |
+| no-console                              | eslint     |         | 💡    |
+| no-div-regex                            | eslint     |         | 🛠️ |
+| no-empty                                | eslint     |         | 💡    |
+| no-empty-function                       | eslint     |         |          |
+| no-eq-null                              | eslint     |         | ⚠️🛠️️ |
+| no-iterator                             | eslint     |         | 💡    |
+| no-plusplus                             | eslint     |         | 💡    |
+| no-proto                                | eslint     |         | 🚧    |
+| no-regex-spaces                         | eslint     |         | 🚧    |
+| no-restricted-globals                   | eslint     |         |          |
+| no-restricted-imports                   | eslint     |         |          |
+| no-undefined                            | eslint     |         |          |
+| no-unused-expressions                   | eslint     |         |          |
+| no-var                                  | eslint     |         | 🛠️ |
+| no-void                                 | eslint     |         | 💡    |
+| unicode-bom                             | eslint     |         | 🛠️ |
+| extensions                              | import     |         |          |
+| no-amd                                  | import     |         |          |
+| no-commonjs                             | import     |         |          |
+| no-cycle                                | import     |         |          |
+| no-default-export                       | import     |         |          |
+| no-dynamic-require                      | import     |         |          |
+| no-webpack-loader-syntax                | import     |         |          |
+| unambiguous                             | import     |         |          |
+| check-access                            | jsdoc      |         |          |
+| empty-tags                              | jsdoc      |         |          |
+| anchor-ambiguous-text                   | jsx_a11y   |         |          |
+| no-new-require                          | node       |         |          |
+| bad-bitwise-operator                    | oxc        |         |          |
+| no-async-await                          | oxc        |         |          |
+| no-barrel-file                          | oxc        |         |          |
+| no-const-enum                           | oxc        |         | 🛠️ |
+| no-optional-chaining                    | oxc        |         |          |
+| no-rest-spread-properties               | oxc        |         |          |
+| catch-or-return                         | promise    |         |          |
+| spec-only                               | promise    |         |          |
+| button-has-type                         | react      |         |          |
+| forbid-elements                         | react      |         |          |
+| jsx-filename-extension                  | react      |         | 🚧    |
+| no-danger                               | react      |         |          |
+| no-unknown-property                     | react      |         | 🚧    |
+| explicit-function-return-type           | typescript |         |          |
+| no-dynamic-delete                       | typescript |         |          |
+| no-empty-object-type                    | typescript |         |          |
+| no-explicit-any                         | typescript |         | 🛠️ |
+| no-import-type-side-effects             | typescript |         | 🛠️ |
+| no-namespace                            | typescript |         |          |
+| no-non-null-asserted-nullish-coalescing | typescript |         |          |
+| no-non-null-assertion                   | typescript |         |          |
+| no-require-imports                      | typescript |         | 🚧    |
+| no-var-requires                         | typescript |         |          |
+| prefer-literal-enum-member              | typescript |         |          |
+| no-abusive-eslint-disable               | unicorn    |         |          |
+| no-anonymous-default-export             | unicorn    |         |          |
+| no-array-for-each                       | unicorn    |         | 🚧    |
+| no-array-reduce                         | unicorn    |         |          |
+| no-document-cookie                      | unicorn    |         |          |
+| no-length-as-slice-end                  | unicorn    |         | 🛠️ |
+| no-magic-array-flat-depth               | unicorn    |         |          |
+| no-process-exit                         | unicorn    |         | 🚧    |
+| prefer-modern-math-apis                 | unicorn    |         | 🚧    |
+| prefer-node-protocol                    | unicorn    |         | 🛠️ |
+| prefer-number-properties                | unicorn    |         | ⚠️🛠️️ |
+
+## Suspicious (33):
+code that is most likely wrong or useless.
+| Rule name                          | Source     | Default | Fixable? |
+| ---------------------------------- | ---------- | ------- | -------- |
+| block-scoped-var                   | eslint     |         |          |
+| no-extend-native                   | eslint     |         |          |
+| no-extra-bind                      | eslint     |         | 🚧    |
+| no-new                             | eslint     |         |          |
+| no-unexpected-multiline            | eslint     |         | ⚠️🛠️️ |
+| no-unneeded-ternary                | eslint     |         | ⚠️🛠️️ |
+| no-useless-concat                  | eslint     |         |          |
+| no-useless-constructor             | eslint     |         | 🛠️ |
+| no-absolute-path                   | import     |         | 🚧    |
+| no-empty-named-blocks              | import     |         | 🛠️ |
+| no-named-as-default                | import     |         |          |
+| no-named-as-default-member         | import     |         |          |
+| no-self-import                     | import     |         |          |
+| no-unassigned-import               | import     |         |          |
+| no-commented-out-tests             | jest       |         |          |
+| approx-constant                    | oxc        |         |          |
+| misrefactored-assign-op            | oxc        |         | 🚧    |
+| no-async-endpoint-handlers         | oxc        |         |          |
+| no-promise-in-callback             | promise    |         |          |
+| iframe-missing-sandbox             | react      |         | 🚧    |
+| jsx-no-comment-textnodes           | react      |         |          |
+| jsx-no-script-url                  | react      |         | 🚧    |
+| no-namespace                       | react      |         |          |
+| react-in-jsx-scope                 | react      |         |          |
+| style-prop-object                  | react      |         |          |
+| no-confusing-non-null-assertion    | typescript |         | 🚧    |
+| no-extraneous-class                | typescript |         | ⚠️💡 |
+| no-unnecessary-type-constraint     | typescript |         |          |
+| consistent-function-scoping        | unicorn    |         | 🚧    |
+| no-accessor-recursion              | unicorn    |         |          |
+| no-instanceof-builtins             | unicorn    |         | 🚧    |
+| prefer-add-event-listener          | unicorn    |         | 🚧    |
+| require-post-message-target-origin | unicorn    |         | 💡    |
+
+## Pedantic (82):
+Lints which are rather strict or have occasional false positives.
+| Rule name                               | Source     | Default | Fixable? |
+| --------------------------------------- | ---------- | ------- | -------- |
+| array-callback-return                   | eslint     |         |          |
+| eqeqeq                                  | eslint     |         | ⚠️🛠️️ |
+| max-classes-per-file                    | eslint     |         |          |
+| max-depth                               | eslint     |         |          |
+| max-lines                               | eslint     |         |          |
+| max-lines-per-function                  | eslint     |         |          |
+| max-nested-callbacks                    | eslint     |         |          |
+| no-array-constructor                    | eslint     |         | 🛠️ |
+| no-case-declarations                    | eslint     |         |          |
+| no-constructor-return                   | eslint     |         |          |
+| no-else-return                          | eslint     |         | 🛠️ |
+| no-fallthrough                          | eslint     |         | 🚧    |
+| no-inner-declarations                   | eslint     |         |          |
+| no-lonely-if                            | eslint     |         | 🚧    |
+| no-negated-condition                    | eslint     |         | 🚧    |
+| no-new-wrappers                         | eslint     |         | 🛠️ |
+| no-object-constructor                   | eslint     |         | 🚧    |
+| no-prototype-builtins                   | eslint     |         |          |
+| no-redeclare                            | eslint     |         |          |
+| no-self-compare                         | eslint     |         |          |
+| no-throw-literal                        | eslint     |         | 💡    |
+| radix                                   | eslint     |         | ⚠️🛠️️ |
+| require-await                           | eslint     |         | ⚠️🛠️️ |
+| sort-vars                               | eslint     |         | 🚧    |
+| symbol-description                      | eslint     |         |          |
+| max-dependencies                        | import     |         |          |
+| no-conditional-in-test                  | jest       |         |          |
+| require-param                           | jsdoc      |         |          |
+| require-param-description               | jsdoc      |         |          |
+| require-param-name                      | jsdoc      |         |          |
+| require-param-type                      | jsdoc      |         |          |
+| require-returns                         | jsdoc      |         |          |
+| require-returns-description             | jsdoc      |         |          |
+| require-returns-type                    | jsdoc      |         |          |
+| checked-requires-onchange-or-readonly   | react      |         |          |
+| jsx-no-useless-fragment                 | react      |         | 💡    |
+| no-unescaped-entities                   | react      |         |          |
+| rules-of-hooks                          | react      |         |          |
+| ban-ts-comment                          | typescript |         | 🛠️ |
+| ban-types                               | typescript |         | 🚧    |
+| no-unsafe-function-type                 | typescript |         |          |
+| prefer-enum-initializers                | typescript |         | 🚧    |
+| prefer-ts-expect-error                  | typescript |         | 🛠️ |
+| consistent-assert                       | unicorn    |         | 🛠️ |
+| consistent-empty-array-spread           | unicorn    |         | 💡    |
+| escape-case                             | unicorn    |         | 🛠️ |
+| explicit-length-check                   | unicorn    |         | 🛠️ |
+| new-for-builtins                        | unicorn    |         |          |
+| no-hex-escape                           | unicorn    |         | 🛠️ |
+| no-instanceof-array                     | unicorn    |         | 🛠️ |
+| no-lonely-if                            | unicorn    |         |          |
+| no-negation-in-equality-check           | unicorn    |         | 🚧    |
+| no-new-buffer                           | unicorn    |         | 🚧    |
+| no-object-as-default-parameter          | unicorn    |         |          |
+| no-static-only-class                    | unicorn    |         | ⚠️🛠️️ |
+| no-this-assignment                      | unicorn    |         |          |
+| no-typeof-undefined                     | unicorn    |         | 🚧    |
+| no-unnecessary-array-flat-depth         | unicorn    |         | 🚧    |
+| no-unnecessary-slice-end                | unicorn    |         | 🛠️ |
+| no-unreadable-iife                      | unicorn    |         |          |
+| no-useless-promise-resolve-reject       | unicorn    |         | 🛠️ |
+| no-useless-switch-case                  | unicorn    |         | 🚧    |
+| no-useless-undefined                    | unicorn    |         | 🛠️ |
+| prefer-array-flat                       | unicorn    |         | ⚠️🛠️️ |
+| prefer-array-some                       | unicorn    |         | 🛠️ |
+| prefer-blob-reading-methods             | unicorn    |         | 🚧    |
+| prefer-code-point                       | unicorn    |         | 🛠️ |
+| prefer-date-now                         | unicorn    |         | 🛠️ |
+| prefer-dom-node-append                  | unicorn    |         | 🛠️ |
+| prefer-dom-node-dataset                 | unicorn    |         | 🚧    |
+| prefer-dom-node-remove                  | unicorn    |         |          |
+| prefer-event-target                     | unicorn    |         |          |
+| prefer-math-min-max                     | unicorn    |         | 🛠️ |
+| prefer-math-trunc                       | unicorn    |         | 🚧    |
+| prefer-native-coercion-functions        | unicorn    |         | 🚧    |
+| prefer-prototype-methods                | unicorn    |         | 🛠️ |
+| prefer-query-selector                   | unicorn    |         | 🛠️ |
+| prefer-regexp-test                      | unicorn    |         | 🛠️ |
+| prefer-string-replace-all               | unicorn    |         | 🛠️ |
+| prefer-string-slice                     | unicorn    |         | 🛠️ |
+| prefer-type-error                       | unicorn    |         | 🛠️ |
+| require-number-to-fixed-digits-argument | unicorn    |         | 🛠️ |
+
+## Style (149):
+Code that should be written in a more idiomatic way.
+| Rule name                            | Source     | Default | Fixable? |
+| ------------------------------------ | ---------- | ------- | -------- |
+| arrow-body-style                     | eslint     |         | 🚧    |
+| curly                                | eslint     |         | 🛠️ |
+| default-case-last                    | eslint     |         |          |
+| default-param-last                   | eslint     |         |          |
+| func-names                           | eslint     |         | 🛠️💡 |
+| func-style                           | eslint     |         | 🚧    |
+| grouped-accessor-pairs               | eslint     |         | 🚧    |
+| guard-for-in                         | eslint     |         |          |
+| id-length                            | eslint     |         |          |
+| init-declarations                    | eslint     |         |          |
+| max-params                           | eslint     |         |          |
+| new-cap                              | eslint     |         | 🚧    |
+| no-continue                          | eslint     |         |          |
+| no-duplicate-imports                 | eslint     |         | 🚧    |
+| no-extra-label                       | eslint     |         | 🛠️ |
+| no-label-var                         | eslint     |         |          |
+| no-labels                            | eslint     |         |          |
+| no-lone-blocks                       | eslint     |         |          |
+| no-magic-numbers                     | eslint     |         | 🚧    |
+| no-multi-assign                      | eslint     |         |          |
+| no-multi-str                         | eslint     |         |          |
+| no-nested-ternary                    | eslint     |         |          |
+| no-new-func                          | eslint     |         |          |
+| no-return-assign                     | eslint     |         | 🚧    |
+| no-script-url                        | eslint     |         |          |
+| no-template-curly-in-string          | eslint     |         | ⚠️🛠️️ |
+| no-ternary                           | eslint     |         |          |
+| operator-assignment                  | eslint     |         | ⚠️🛠️️ |
+| prefer-exponentiation-operator       | eslint     |         |          |
+| prefer-numeric-literals              | eslint     |         | 🛠️ |
+| prefer-object-has-own                | eslint     |         | 🛠️ |
+| prefer-object-spread                 | eslint     |         | 🛠️ |
+| prefer-promise-reject-errors         | eslint     |         |          |
+| prefer-rest-params                   | eslint     |         |          |
+| prefer-spread                        | eslint     |         |          |
+| sort-imports                         | eslint     |         | 🛠️ |
+| sort-keys                            | eslint     |         | 🚧    |
+| vars-on-top                          | eslint     |         |          |
+| yoda                                 | eslint     |         | 🛠️ |
+| consistent-type-specifier-style      | import     |         | 🛠️ |
+| exports-last                         | import     |         |          |
+| first                                | import     |         | 🚧    |
+| group-exports                        | import     |         |          |
+| no-anonymous-default-export          | import     |         |          |
+| no-duplicates                        | import     |         |          |
+| no-mutable-exports                   | import     |         |          |
+| no-named-default                     | import     |         |          |
+| no-namespace                         | import     |         | 🚧    |
+| prefer-default-export                | import     |         |          |
+| consistent-test-it                   | jest       |         | 🛠️ |
+| max-expects                          | jest       |         |          |
+| max-nested-describe                  | jest       |         |          |
+| no-alias-methods                     | jest       |         | 🛠️ |
+| no-confusing-set-timeout             | jest       |         |          |
+| no-deprecated-functions              | jest       |         | 🛠️ |
+| no-done-callback                     | jest       |         |          |
+| no-duplicate-hooks                   | jest       |         |          |
+| no-hooks                             | jest       |         |          |
+| no-identical-title                   | jest       |         |          |
+| no-interpolation-in-snapshots        | jest       |         |          |
+| no-jasmine-globals                   | jest       |         | 🛠️ |
+| no-large-snapshots                   | jest       |         |          |
+| no-mocks-import                      | jest       |         |          |
+| no-restricted-jest-methods           | jest       |         |          |
+| no-restricted-matchers               | jest       |         |          |
+| no-test-prefixes                     | jest       |         | 🛠️ |
+| no-test-return-statement             | jest       |         |          |
+| no-untyped-mock-factory              | jest       |         | 🛠️ |
+| prefer-called-with                   | jest       |         |          |
+| prefer-comparison-matcher            | jest       |         | 🛠️ |
+| prefer-each                          | jest       |         |          |
+| prefer-equality-matcher              | jest       |         |          |
+| prefer-expect-resolves               | jest       |         | 🛠️ |
+| prefer-hooks-in-order                | jest       |         |          |
+| prefer-hooks-on-top                  | jest       |         |          |
+| prefer-jest-mocked                   | jest       |         | 🛠️ |
+| prefer-lowercase-title               | jest       |         | 🛠️ |
+| prefer-mock-promise-shorthand        | jest       |         | 🛠️ |
+| prefer-spy-on                        | jest       |         | 🛠️ |
+| prefer-strict-equal                  | jest       |         | 🛠️ |
+| prefer-to-be                         | jest       |         | 🛠️ |
+| prefer-to-contain                    | jest       |         |          |
+| prefer-to-have-length                | jest       |         | 🛠️ |
+| prefer-todo                          | jest       |         | 🛠️ |
+| require-hook                         | jest       |         |          |
+| require-top-level-describe           | jest       |         |          |
+| no-exports-assign                    | node       |         | 🛠️ |
+| avoid-new                            | promise    |         |          |
+| no-nesting                           | promise    |         | 🚧    |
+| no-return-wrap                       | promise    |         | 🚧    |
+| param-names                          | promise    |         |          |
+| prefer-await-to-callbacks            | promise    |         |          |
+| prefer-await-to-then                 | promise    |         |          |
+| prefer-catch                         | promise    |         | 🚧    |
+| jsx-boolean-value                    | react      |         | 🛠️ |
+| jsx-curly-brace-presence             | react      |         | 🚧    |
+| no-set-state                         | react      |         |          |
+| prefer-es6-class                     | react      |         |          |
+| self-closing-comp                    | react      |         | 🛠️ |
+| adjacent-overload-signatures         | typescript |         |          |
+| array-type                           | typescript |         | 🛠️ |
+| ban-tslint-comment                   | typescript |         | 🛠️ |
+| consistent-generic-constructors      | typescript |         | 🚧    |
+| consistent-indexed-object-style      | typescript |         | 🛠️ |
+| consistent-type-definitions          | typescript |         | 🛠️ |
+| consistent-type-imports              | typescript |         | 🛠️ |
+| no-empty-interface                   | typescript |         |          |
+| no-inferrable-types                  | typescript |         | 🚧    |
+| prefer-for-of                        | typescript |         | 🚧    |
+| prefer-function-type                 | typescript |         | 🛠️ |
+| prefer-namespace-keyword             | typescript |         | 🛠️ |
+| catch-error-name                     | unicorn    |         | 🛠️ |
+| consistent-date-clone                | unicorn    |         | 🛠️ |
+| consistent-existence-index-check     | unicorn    |         | 🛠️ |
+| empty-brace-spaces                   | unicorn    |         | 🛠️ |
+| error-message                        | unicorn    |         |          |
+| filename-case                        | unicorn    |         |          |
+| no-array-method-this-argument        | unicorn    |         | 🚧    |
+| no-await-expression-member           | unicorn    |         | ⚠️🛠️️ |
+| no-console-spaces                    | unicorn    |         | 🛠️ |
+| no-nested-ternary                    | unicorn    |         | 🛠️ |
+| no-null                              | unicorn    |         | 🛠️ |
+| no-unreadable-array-destructuring    | unicorn    |         |          |
+| no-zero-fractions                    | unicorn    |         | 🛠️ |
+| number-literal-case                  | unicorn    |         | 🛠️ |
+| numeric-separators-style             | unicorn    |         | 🛠️ |
+| prefer-array-flat-map                | unicorn    |         | 🛠️ |
+| prefer-array-index-of                | unicorn    |         | 🚧    |
+| prefer-dom-node-text-content         | unicorn    |         | 🛠️ |
+| prefer-global-this                   | unicorn    |         | 🚧    |
+| prefer-includes                      | unicorn    |         | 🚧    |
+| prefer-logical-operator-over-ternary | unicorn    |         | 🚧    |
+| prefer-modern-dom-apis               | unicorn    |         | 🚧    |
+| prefer-negative-index                | unicorn    |         | 🛠️ |
+| prefer-object-from-entries           | unicorn    |         | 🚧    |
+| prefer-optional-catch-binding        | unicorn    |         | 🛠️ |
+| prefer-reflect-apply                 | unicorn    |         |          |
+| prefer-spread                        | unicorn    |         | 🛠️ |
+| prefer-string-raw                    | unicorn    |         | 🛠️ |
+| prefer-string-trim-start-end         | unicorn    |         | 🛠️ |
+| prefer-structured-clone              | unicorn    |         | 💡    |
+| require-array-join-separator         | unicorn    |         | 🛠️ |
+| switch-case-braces                   | unicorn    |         | 🛠️ |
+| text-encoding-identifier-case        | unicorn    |         | 🛠️ |
+| throw-new-error                      | unicorn    |         | 🛠️ |
+| no-import-node-test                  | vitest     |         | 🛠️ |
+| prefer-to-be-falsy                   | vitest     |         | 🛠️ |
+| prefer-to-be-object                  | vitest     |         | 🛠️ |
+| prefer-to-be-truthy                  | vitest     |         | 🛠️ |
+
+## Nursery (8):
+New lints that are still under development.
+| Rule name             | Source  | Default | Fixable? |
+| --------------------- | ------- | ------- | -------- |
+| getter-return         | eslint  |         |          |
+| no-undef              | eslint  |         |          |
+| no-unreachable        | eslint  |         |          |
+| export                | import  |         |          |
+| named                 | import  |         |          |
+| no-map-spread         | oxc     |         | 🛠️💡 |
+| no-return-in-finally  | promise |         |          |
+| require-render-return | react   |         |          |
+
+Default: 123
+Total: 524

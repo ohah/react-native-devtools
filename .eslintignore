@@ -1,0 +1,27 @@
+# Build outputs
+out/
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Public assets (Chrome DevTools)
+public/
+
+# Generated files
+*.min.js
+*.bundle.js
+
+# Test coverage
+coverage/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

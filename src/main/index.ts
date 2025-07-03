@@ -84,7 +84,7 @@ function startChromeDevToolsServer() {
 }
 
 // Chrome DevTools Protocol 연결 처리
-function handleChromeDevToolsConnection(ws: any, req: any) {
+function handleChromeDevToolsConnection(ws: any, _req: any) {
   const clientId = Date.now().toString();
   console.log(`New Chrome DevTools client connected: ${clientId}`);
 
@@ -390,7 +390,7 @@ function handleChromeDevToolsMessage(clientId: string, message: any, ws: any) {
             result = `Evaluated: ${expression}`;
             resultType = 'string';
           }
-        } catch (error) {
+        } catch (error: any) {
           result = `Error: ${error.message}`;
           resultType = 'string';
         }
@@ -451,7 +451,7 @@ function sendChromeDevToolsResponse(ws: any, response: any) {
 async function connectToReactNativeInspector() {
   try {
     const WebSocket = require('ws');
-    const http = require('http');
+    // const http = require('http');
 
     // 먼저 React Native 타겟 목록을 가져옴
     const targets = await getReactNativeTargets();
@@ -555,7 +555,7 @@ async function getTargets() {
       return [
         {
           description: hermesTarget.description,
-          devtoolsFrontendUrl: `http://localhost:3000/devtools/front_end/inspector.html?ws=localhost:9222`,
+          devtoolsFrontendUrl: `http://localhost:3000/devtools/front_end/devtools_app.html?ws=localhost:9222`,
           id: hermesTarget.id,
           title: hermesTarget.title,
           type: hermesTarget.type,
@@ -574,7 +574,7 @@ async function getTargets() {
   return [
     {
       description: 'React Native App',
-      devtoolsFrontendUrl: `http://localhost:3000/devtools/front_end/inspector.html?ws=localhost:9222`,
+      devtoolsFrontendUrl: `http://localhost:3000/devtools/front_end/devtools_app.html?ws=localhost:9222`,
       id: 'react-native-app',
       title: 'React Native App',
       type: 'page',
@@ -655,7 +655,7 @@ app.whenReady().then(() => {
   });
 
   // Toggle DevTools with shortcuts
-  ipcMain.on('toggle-devtools', (event, name) => {
+  ipcMain.on('toggle-devtools', (_event, _name) => {
     const windows = BrowserWindow.getAllWindows();
     if (windows.length > 0) {
       const window = windows[0];
@@ -668,7 +668,7 @@ app.whenReady().then(() => {
   });
 
   // Check port availability
-  ipcMain.on('check-port-available', (event, port) => {
+  ipcMain.on('check-port-available', (event, _port) => {
     // 간단한 포트 체크 (실제로는 더 복잡한 로직 필요)
     event.reply('check-port-available-reply', true);
   });
@@ -679,7 +679,7 @@ app.whenReady().then(() => {
       const client = await CDP({ port: 9222 });
       await client.close();
       event.reply('chrome-connection-status', { connected: true });
-    } catch (error) {
+    } catch (error: any) {
       event.reply('chrome-connection-status', {
         connected: false,
         error: error.message,
@@ -688,7 +688,7 @@ app.whenReady().then(() => {
   });
 
   // CDP 연결 핸들러
-  ipcMain.handle('connect-to-cdp', async (event, webSocketUrl: string) => {
+  ipcMain.handle('connect-to-cdp', async (_event, webSocketUrl: string) => {
     try {
       console.log('Connecting to CDP:', webSocketUrl);
 
@@ -701,7 +701,7 @@ app.whenReady().then(() => {
 
       console.log('CDP connected successfully');
       return { success: true };
-    } catch (error) {
+    } catch (error: any) {
       console.error('CDP connection failed:', error);
       return { success: false, error: error.message };
     }

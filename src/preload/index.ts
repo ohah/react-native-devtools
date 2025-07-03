@@ -7,19 +7,19 @@ import { join } from 'path';
 const api = {
   getDevToolsPath: (): string => {
     // DevTools 파일의 절대 경로 반환
-    return join(__dirname, '../../public/devtools/front_end/inspector.html');
+    return join(__dirname, '../../public/devtools/front_end/devtools_app.html');
   },
   getDevToolsHTML: (): string => {
     // DevTools HTML 파일을 읽어서 반환
-    const filePath = join(__dirname, '../../public/devtools/front_end/inspector.html');
+    const filePath = join(__dirname, '../../public/devtools/front_end/devtools_app.html');
     return readFileSync(filePath, 'utf8');
   },
   connectToCDP: async (webSocketUrl: string): Promise<{ success: boolean; error?: string }> => {
     try {
       // 일렉트론 메인 프로세스에 CDP 연결 요청
-      const result = await window.electronAPI?.connectToCDP?.(webSocketUrl);
+      await (window as any).electronAPI?.connectToCDP?.(webSocketUrl);
       return { success: true };
-    } catch (error) {
+    } catch (error: any) {
       return { success: false, error: error.message };
     }
   },

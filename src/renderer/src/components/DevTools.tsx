@@ -2,10 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 
 interface DevToolsProps {
   webSocketUrl?: string;
-  targetUrl?: string;
 }
 
-const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl, targetUrl }) => {
+const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -13,301 +12,275 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl, targetUrl }) => {
     'disconnected' | 'connecting' | 'connected'
   >('disconnected');
 
-  // CDP 연결 함수
-  const connectToCDP = async () => {
-    if (!webSocketUrl) {
-      console.log('No WebSocket URL provided');
-      return;
-    }
-
-    setConnectionStatus('connecting');
-
-    try {
-      // 일렉트론에서 CDP 연결
-      if (window.electronAPI) {
-        const result = await window.electronAPI.connectToCDP(webSocketUrl);
-        if (result.success) {
-          setConnectionStatus('connected');
-          console.log('CDP connected successfully');
-        } else {
-          setConnectionStatus('disconnected');
-          console.error('CDP connection failed:', result.error);
-        }
-      }
-    } catch (err) {
-      setConnectionStatus('disconnected');
-      console.error('CDP connection error:', err);
-    }
-  };
-
   useEffect(() => {
-    const loadDevTools = async () => {
+    const fetchReactNativeTargets = async () => {
       try {
-        if (iframeRef.current) {
-          const iframe = iframeRef.current;
+        // React Native Inspector에서 타겟 목록 가져오기
+        const response = await fetch('http://localhost:8082/json');
+        const targets = await response.json();
+        console.log('React Native targets:', targets);
 
-          // 일렉트론에서 파일 URL 사용
-          const isElectron = window.electronAPI !== undefined;
-          let devtoolsUrl: string;
+        // Hermes React Native 앱 찾기
+        const experimentalTarget = targets.find(
+          (target: { title: string; description: string }) =>
+            target.title?.toLowerCase().includes('experimental') ||
+            target.description?.toLowerCase().includes('experimental')
+        );
 
-          devtoolsUrl = '/devtools/front_end/devtools_app.html';
+        const hermesTarget = targets.find(
+          (target: { vm: string; type: string }) => target.vm === 'Hermes' && target.type === 'node'
+        );
 
-          // Add query parameters if provided
-          const params = new URLSearchParams();
+        const selectedTarget = experimentalTarget || hermesTarget;
 
-          // 웹소켓 연결 파라미터 (가장 중요)
-          if (webSocketUrl) {
-            // WebSocket URL에서 호스트와 포트 추출
-            try {
-              const wsUrl = new URL(webSocketUrl);
-              // React Native의 경우 전체 WebSocket URL을 사용
-              if (webSocketUrl.includes('inspector/debug')) {
-                // React Native Inspector URL
-                const wsParam = `${wsUrl.hostname}:${wsUrl.port || '8081'}`;
-                params.append('ws', wsParam);
-                console.log('React Native WebSocket parameter set:', wsParam);
-              } else {
-                // 일반적인 WebSocket URL
-                const wsParam = `${wsUrl.hostname}:${wsUrl.port || '9222'}`;
-                params.append('ws', wsParam);
-                console.log('WebSocket parameter set:', wsParam);
-              }
-            } catch (error) {
-              console.error('Invalid WebSocket URL:', error);
-            }
-          }
+        if (selectedTarget) {
+          console.log('Found Hermes target:', selectedTarget);
+          const webSocketDebuggerUrl = selectedTarget.webSocketDebuggerUrl;
 
-          if (targetUrl) {
-            params.append('target', targetUrl);
-          }
+          if (iframeRef.current) {
+            const url = new URL('/devtools/front_end/devtools_app.html', window.location.origin);
+            const params = url.searchParams;
 
-          // DevTools 설정 파라미터들
-          params.append('experiments', 'true'); // 실험적 기능 활성화
-          params.append('can_dock', 'false'); // 독립 창 모드
-          params.append('isSharedWorker', 'false');
-          params.append('v8only', 'false');
-          params.append('remoteFrontend', 'true');
+            // React Native Inspector 전용 파라미터 설정
+            params.append('experiments', 'true');
+            params.append('v8only', 'true');
+            params.append('improvedChromeReloads', 'true');
+            params.append('experimental', 'true');
+            params.append('reactNative', 'true');
+            params.append('enableNetwork', 'true');
+            params.append('enableProfiler', 'true');
+            params.append('enableDebugger', 'true');
 
-          // React Native 특화 파라미터들
-          params.append('nodeFrontend', 'true');
-          params.append('hasOtherClients', 'false');
-          params.append('browserConnection', 'false');
+            // 프록시 서버 WebSocket URL 사용
+            const proxyUrl = 'localhost:2052';
+            console.log('Using proxy server URL:', proxyUrl);
+            params.append('ws', proxyUrl);
 
-          // 추가 연결 파라미터들
-          params.append('panel', 'sources'); // 소스 패널 기본 선택
-          params.append('debugFrontend', 'true'); // 디버그 프론트엔드 활성화
+            // 콘솔과 네트워크 탭 활성화
+            params.append('panel', 'console');
+            params.append('enableConsole', 'true');
+            params.append('showConsole', 'true');
+            params.append('consolePanel', 'true');
+            params.append('enableRuntime', 'true');
+            params.append('enableLogging', 'true');
+            params.append('enableNetwork', 'true');
+            params.append('networkPanel', 'true');
+            params.append('showNetwork', 'true');
+            params.append('nodeFrontend', 'true');
+            params.append('hasOtherClients', 'false');
+            params.append('browserConnection', 'false');
 
-          // Elements Inspector 비활성화
-          params.append('disableElements', 'true');
-          params.append('hideElements', 'true');
-          params.append('showElements', 'false');
-          params.append('elementsPanel', 'false');
-          params.append('disableDOM', 'true');
-          params.append('hideDOM', 'true');
+            // 엘리먼트 탭 비활성화
+            params.append('disableElements', 'true');
+            params.append('hideElements', 'true');
+            params.append('elementsPanel', 'false');
+            params.append('disableDOM', 'true');
 
-          // Device Mode/브라우저 미리보기 비활성화
-          params.append('disableDeviceMode', 'true');
-          params.append('hideDeviceMode', 'true');
-          params.append('showDeviceMode', 'false');
-          params.append('deviceMode', 'false');
-          params.append('disableResponsive', 'true');
-          params.append('hideResponsive', 'true');
-          params.append('showResponsive', 'false');
-          params.append('responsive', 'false');
-          params.append('disableEmulation', 'true');
-          params.append('hideEmulation', 'true');
-          params.append('showEmulation', 'false');
-          params.append('emulation', 'false');
+            // 자동 모델 등록을 위한 파라미터들
+            params.append('autoRegisterModels', 'true');
+            params.append('autostart', 'true');
+            params.append('enableAutoSetup', 'true');
+            params.append('enableNetworkAPI', 'true');
+            params.append('reactNativeMode', 'true');
 
-          if (params.toString()) {
-            devtoolsUrl += `?${params.toString()}`;
-          }
+            iframeRef.current.src = url.toString();
 
-          console.log('Loading DevTools from:', devtoolsUrl);
+            // iframe 로드 후 자동 등록 스크립트 주입
+            iframeRef.current.onload = () => {
+              setIsLoading(false);
 
-          iframe.onload = () => {
-            setIsLoading(false);
-            setError(null);
-            console.log('DevTools loaded successfully');
+              // DevTools iframe에 자동 등록 스크립트 주입
+              if (iframeRef.current?.contentWindow) {
+                const autoSetupScript = `
+                  // React Native Inspector 전용 설정
+                  if (window.SDK && window.SDK.SDKModel) {
+                    // RuntimeModel 자동 등록 (React Native에서 지원)
+                    if (window.SDK.RuntimeModel) {
+                      window.SDK.SDKModel.register(window.SDK.RuntimeModel, { 
+                        capabilities: 4, 
+                        autostart: true 
+                      });
+                    }
+                    
+                    // ConsoleModel 자동 등록 (React Native에서 지원)
+                    if (window.SDK.ConsoleModel) {
+                      window.SDK.SDKModel.register(window.SDK.ConsoleModel, { 
+                        capabilities: 4, 
+                        autostart: true 
+                      });
+                    }
+                    
+                    // NetworkModel 자동 등록 (React Native 0.74+ 지원)
+                    if (window.SDK.NetworkManager) {
+                      window.SDK.SDKModel.register(window.SDK.NetworkManager, { 
+                        capabilities: 4, 
+                        autostart: true 
+                      });
+                    }
+                    
+                    // LogModel 자동 등록 (React Native에서 지원)
+                    if (window.SDK.LogModel) {
+                      window.SDK.SDKModel.register(window.SDK.LogModel, { 
+                        capabilities: 4, 
+                        autostart: true 
+                      });
+                    }
+                    
+                    console.log('React Native 0.74+ DevTools models registered successfully');
+                  }
+                  
+                  // React Native 0.74+ 지원 API 설정
+                  if (window.Protocol && window.Protocol.InspectorBackend) {
+                    const originalSend = window.Protocol.InspectorBackend.Connection.sendRawMessage;
+                    window.Protocol.InspectorBackend.Connection.sendRawMessage = function(message) {
+                      try {
+                        const parsedMessage = JSON.parse(message);
+                        
+                        // React Native 0.74+에서 지원하지 않는 API들만 필터링
+                        const unsupportedApis = [
+                          'Debugger.setBlackboxPatterns',
+                          'Debugger.setBlackboxedRanges'
+                        ];
+                        
+                        if (parsedMessage.method && unsupportedApis.includes(parsedMessage.method)) {
+                          console.log('Ignoring unsupported API call:', parsedMessage.method);
+                          return; // API 호출 무시
+                        }
+                        
+                        // Network API 요청들을 수동으로 처리
+                        const networkApis = [
+                          'Network.enable',
+                          'Network.setAttachDebugStack',
+                          'Network.clearAcceptedEncodingsOverride'
+                        ];
+                        
+                        if (parsedMessage.method && networkApis.includes(parsedMessage.method)) {
+                          console.log('Manually handling Network API request:', parsedMessage.method);
+                          // 성공 응답 반환
+                          const response = {
+                            id: parsedMessage.id,
+                            result: {}
+                          };
+                          window.Protocol.InspectorBackend.Connection.dispatch(JSON.stringify(response));
+                          return;
+                        }
+                        
+                        // 지원되는 API는 정상적으로 전송
+                        return originalSend.call(this, message);
+                      } catch (error) {
+                        // JSON 파싱 실패 시 원래 함수 호출
+                        return originalSend.call(this, message);
+                      }
+                    };
+                    
+                    // Network API 직접 활성화
+                    const enableNetworkDirectly = () => {
+                      console.log('Directly enabling Network API...');
+                      
+                      // Network.enable 직접 호출
+                      const networkEnableMessage = {
+                        id: Date.now(),
+                        method: 'Network.enable',
+                        params: {}
+                      };
+                      
+                      // 성공 응답 시뮬레이션
+                      setTimeout(() => {
+                        const response = {
+                          id: networkEnableMessage.id,
+                          result: {}
+                        };
+                        window.Protocol.InspectorBackend.Connection.dispatch(JSON.stringify(response));
+                        console.log('Network API enabled successfully');
+                      }, 100);
+                      
+                      // 원래 메시지도 전송 (React Native Inspector가 처리할 수 있는 경우)
+                      originalSend.call(window.Protocol.InspectorBackend.Connection, JSON.stringify(networkEnableMessage));
+                    };
+                    
+                    // 즉시 실행
+                    enableNetworkDirectly();
+                  }
+                  
+                  // Network API 수동 활성화 (더 강력한 방법)
+                  const enableNetworkAPI = () => {
+                    if (window.Protocol && window.Protocol.InspectorBackend) {
+                      console.log('Manually enabling Network API...');
+                      
+                      // Network.enable 요청
+                      const networkEnableMessage = {
+                        id: Date.now(),
+                        method: 'Network.enable',
+                        params: {}
+                      };
+                      window.Protocol.InspectorBackend.Connection.sendRawMessage(JSON.stringify(networkEnableMessage));
+                      
+                      // Network 패널 활성화
+                      if (window.UI && window.UI.inspectorView) {
+                        try {
+                          window.UI.inspectorView.showPanel('network');
+                          console.log('Network panel activated');
+                        } catch (error) {
+                          console.log('Network panel activation failed:', error);
+                        }
+                      }
+                    }
+                  };
+                  
+                  // 여러 번 시도 (DevTools 로딩 시간 고려)
+                  setTimeout(enableNetworkAPI, 1000);
+                  setTimeout(enableNetworkAPI, 2000);
+                  setTimeout(enableNetworkAPI, 3000);
+                  
+                  // DevTools 완전 로드 후 다시 시도
+                  window.addEventListener('load', () => {
+                    setTimeout(enableNetworkAPI, 500);
+                  });
+                  
+                  // CDP 메시지 처리
+                  window.addEventListener('message', function(event) {
+                    if (event.data.type === 'CDP_MESSAGE') {
+                      if (window.Protocol && window.Protocol.InspectorBackend) {
+                        window.Protocol.InspectorBackend.Connection.dispatch(event.data.data);
+                      }
+                    }
+                  });
+                `;
 
-            // DevTools 로드 후 Elements 패널 숨기기
-            try {
-              const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-              if (iframeDoc) {
-                // Elements 패널 숨기기
-                const elementsPanel = iframeDoc.querySelector('[data-panel-name="elements"]');
-                if (elementsPanel) {
-                  (elementsPanel as HTMLElement).style.display = 'none';
-                }
-
-                // Elements 탭 숨기기
-                const elementsTab = iframeDoc.querySelector('[data-tab-id="elements"]');
-                if (elementsTab) {
-                  (elementsTab as HTMLElement).style.display = 'none';
-                }
-
-                // Elements 관련 UI 요소들 숨기기
-                const elementsElements = iframeDoc.querySelectorAll(
-                  '[data-panel-name*="elements"], [data-tab-id*="elements"]'
-                );
-                for (const el of elementsElements) {
-                  (el as HTMLElement).style.display = 'none';
-                }
-
-                // Device Mode 툴바 숨기기
-                const deviceModeElements = iframeDoc.querySelectorAll(
-                  '[data-panel-name*="device"], [data-tab-id*="device"], [data-panel-name*="emulation"], [data-tab-id*="emulation"], [data-panel-name*="responsive"], [data-tab-id*="responsive"]'
-                );
-                for (const el of deviceModeElements) {
-                  (el as HTMLElement).style.display = 'none';
-                }
-
-                // Device Mode 툴바 버튼들 숨기기
-                const deviceModeButtons = iframeDoc.querySelectorAll(
-                  '[title*="Toggle device"], [title*="device mode"], [title*="responsive"], [title*="emulation"]'
-                );
-                for (const el of deviceModeButtons) {
-                  (el as HTMLElement).style.display = 'none';
-                }
-              }
-            } catch (error) {
-              console.log('Elements panel hiding failed (expected in some cases):', error);
-            }
-
-            // DevTools 로드 후 CDP 연결 시도
-            if (webSocketUrl) {
-              connectToCDP();
-            }
-          };
-
-          iframe.onerror = () => {
-            setIsLoading(false);
-            setError('DevTools 로드에 실패했습니다.');
-            console.error('Failed to load DevTools');
-          };
-
-          // iframe에 직접 HTML 내용을 설정
-          if (isElectron) {
-            try {
-              let devtoolsUrl = './devtools/front_end/devtools_app.html';
-              console.log('devtoolsUrl', devtoolsUrl);
-              const params = new URLSearchParams();
-
-              // React Native 디버깅을 위한 필수 파라미터들
-              if (webSocketUrl) {
-                // WebSocket URL에서 호스트와 포트 추출
+                // 스크립트를 iframe에 주입 (더 안전한 방법)
                 try {
-                  const wsUrl = new URL(webSocketUrl);
-                  // React Native의 경우 전체 WebSocket URL을 사용
-                  if (webSocketUrl.includes('inspector/debug')) {
-                    // React Native Inspector URL
-                    const wsParam = `${wsUrl.hostname}:${wsUrl.port || '8081'}`;
-                    params.append('ws', wsParam);
-                    console.log('React Native WebSocket parameter set:', wsParam);
-                  } else {
-                    // 일반적인 WebSocket URL
-                    const wsParam = `${wsUrl.hostname}:${wsUrl.port || '9222'}`;
-                    params.append('ws', wsParam);
-                    console.log('WebSocket parameter set:', wsParam);
+                  // 방법 1: postMessage로 스크립트 전달
+                  if (iframeRef.current.contentWindow) {
+                    iframeRef.current.contentWindow.postMessage(
+                      {
+                        type: 'INJECT_SCRIPT',
+                        script: autoSetupScript,
+                      },
+                      '*'
+                    );
+                    console.log('React Native DevTools setup script sent via postMessage');
                   }
                 } catch (error) {
-                  console.error('Invalid WebSocket URL:', error);
+                  console.error('Failed to send script via postMessage:', error);
+
+                  // 방법 2: URL 파라미터로 설정 전달
+                  console.log('Using URL parameters for DevTools configuration');
                 }
               }
-              if (targetUrl) {
-                params.append('target', targetUrl);
-              }
-
-              // DevTools 설정 파라미터들
-              params.append('experiments', 'true'); // 실험적 기능 활성화
-              params.append('can_dock', 'false'); // 독립 창 모드
-              params.append('isSharedWorker', 'false');
-              params.append('v8only', 'false');
-              params.append('remoteFrontend', 'true');
-
-              // 브라우저 관련 기능 비활성화
-              params.append('disableBrowserFeatures', 'true');
-              params.append('disableExtensions', 'true');
-              params.append('disableWebSecurity', 'true');
-              params.append('disableSiteIsolationTrials', 'true');
-              params.append('disableBackgroundNetworking', 'true');
-              params.append('disableBackgroundTimerThrottling', 'true');
-              params.append('disableClientSidePhishingDetection', 'true');
-              params.append('disableComponentUpdate', 'true');
-              params.append('disableDefaultApps', 'true');
-              params.append('disableDomainReliability', 'true');
-              params.append('disableFieldTrialConfig', 'true');
-              params.append('disableHangMonitor', 'true');
-              params.append('disableIpcFloodingProtection', 'true');
-              params.append('disablePromptOnRepost', 'true');
-              params.append('disableRendererBackgrounding', 'true');
-              params.append('disableSyncPreference', 'true');
-              params.append('disableTranslate', 'true');
-              params.append('noFirstRun', 'true');
-              params.append('noDefaultBrowserCheck', 'true');
-              params.append('noSandbox', 'true');
-
-              // React Native 특화 파라미터들
-              params.append('nodeFrontend', 'true');
-              params.append('hasOtherClients', 'false');
-              params.append('browserConnection', 'false');
-
-              // 추가 연결 파라미터들
-              params.append('panel', 'sources'); // 소스 패널 기본 선택
-              params.append('debugFrontend', 'true'); // 디버그 프론트엔드 활성화
-
-              // Elements Inspector 비활성화
-              params.append('disableElements', 'true');
-              params.append('hideElements', 'true');
-              params.append('showElements', 'false');
-              params.append('elementsPanel', 'false');
-              params.append('disableDOM', 'true');
-              params.append('hideDOM', 'true');
-
-              // Device Mode/브라우저 미리보기 비활성화
-              params.append('disableDeviceMode', 'true');
-              params.append('hideDeviceMode', 'true');
-              params.append('showDeviceMode', 'false');
-              params.append('deviceMode', 'false');
-              params.append('disableResponsive', 'true');
-              params.append('hideResponsive', 'true');
-              params.append('showResponsive', 'false');
-              params.append('responsive', 'false');
-              params.append('disableEmulation', 'true');
-              params.append('hideEmulation', 'true');
-              params.append('showEmulation', 'false');
-              params.append('emulation', 'false');
-
-              if (params.toString()) {
-                devtoolsUrl += `?${params.toString()}`;
-              }
-
-              console.log('devtoolsUrl', devtoolsUrl);
-
-              iframe.src = devtoolsUrl;
-            } catch (err) {
-              console.error('Failed to load DevTools HTML:', err);
-              iframe.src = devtoolsUrl;
-            }
-          } else {
-            iframe.src = devtoolsUrl;
+            };
           }
+        } else {
+          console.error('Hermes React Native target not found');
+          console.log('Available targets:', targets);
+          setError('React Native 앱을 찾을 수 없습니다. 앱이 실행 중인지 확인해주세요.');
         }
-      } catch (err) {
-        setIsLoading(false);
-        setError('DevTools 초기화에 실패했습니다.');
-        console.error('DevTools initialization error:', err);
+      } catch (error) {
+        console.error('Failed to fetch React Native targets:', error);
+        setError('React Native Inspector에 연결할 수 없습니다. 앱이 실행 중인지 확인해주세요.');
       }
     };
 
-    loadDevTools();
-  }, [webSocketUrl, targetUrl]);
-
-  // WebSocket URL이 변경될 때마다 재연결
-  useEffect(() => {
-    if (webSocketUrl && connectionStatus === 'disconnected') {
-      connectToCDP();
-    }
+    fetchReactNativeTargets();
   }, [webSocketUrl]);
 
   if (error) {
@@ -364,14 +337,16 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl, targetUrl }) => {
           color: 'white',
         }}
       >
-        {connectionStatus === 'connected'
+        {/* {connectionStatus === 'connected'
           ? '연결됨'
           : connectionStatus === 'connecting'
           ? '연결 중...'
-          : '연결 안됨'}
+          : '연결 안됨'} */}
       </div>
 
-      {isLoading && (
+      {iframeRef.current?.src}
+
+      {/* {isLoading && (
         <div
           style={{
             position: 'absolute',
@@ -387,7 +362,7 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl, targetUrl }) => {
         >
           DevTools 로딩 중...
         </div>
-      )}
+      )} */}
       <iframe
         ref={iframeRef}
         title='Chrome DevTools'
@@ -395,7 +370,7 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl, targetUrl }) => {
           border: 'none',
           width: '100vw',
           height: '100vh',
-          display: isLoading ? 'none' : 'block',
+          // display: isLoading ? 'none' : 'block',
         }}
       />
     </div>

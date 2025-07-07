@@ -11,12 +11,14 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl }) => {
   const [connectionStatus, setConnectionStatus] = useState<
     'disconnected' | 'connecting' | 'connected'
   >('disconnected');
+  const [xhrLoggingEnabled, setXhrLoggingEnabled] = useState(false);
+  const [logCommand, setLogCommand] = useState('');
 
   useEffect(() => {
     const fetchReactNativeTargets = async () => {
       try {
         // React Native Inspector에서 타겟 목록 가져오기
-        const response = await fetch('http://localhost:8082/json');
+        const response = await fetch('http://localhost:8081/json');
         const targets = await response.json();
         console.log('React Native targets:', targets);
 
@@ -96,64 +98,64 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl }) => {
                   if (window.SDK && window.SDK.SDKModel) {
                     // RuntimeModel 자동 등록 (React Native에서 지원)
                     if (window.SDK.RuntimeModel) {
-                      window.SDK.SDKModel.register(window.SDK.RuntimeModel, { 
-                        capabilities: 4, 
-                        autostart: true 
+                      window.SDK.SDKModel.register(window.SDK.RuntimeModel, {
+                        capabilities: 4,
+                        autostart: true
                       });
                     }
-                    
+
                     // ConsoleModel 자동 등록 (React Native에서 지원)
                     if (window.SDK.ConsoleModel) {
-                      window.SDK.SDKModel.register(window.SDK.ConsoleModel, { 
-                        capabilities: 4, 
-                        autostart: true 
+                      window.SDK.SDKModel.register(window.SDK.ConsoleModel, {
+                        capabilities: 4,
+                        autostart: true
                       });
                     }
-                    
+
                     // NetworkModel 자동 등록 (React Native 0.74+ 지원)
                     if (window.SDK.NetworkManager) {
-                      window.SDK.SDKModel.register(window.SDK.NetworkManager, { 
-                        capabilities: 4, 
-                        autostart: true 
+                      window.SDK.SDKModel.register(window.SDK.NetworkManager, {
+                        capabilities: 4,
+                        autostart: true
                       });
                     }
-                    
+
                     // LogModel 자동 등록 (React Native에서 지원)
                     if (window.SDK.LogModel) {
-                      window.SDK.SDKModel.register(window.SDK.LogModel, { 
-                        capabilities: 4, 
-                        autostart: true 
+                      window.SDK.SDKModel.register(window.SDK.LogModel, {
+                        capabilities: 4,
+                        autostart: true
                       });
                     }
-                    
+
                     console.log('React Native 0.74+ DevTools models registered successfully');
                   }
-                  
+
                   // React Native 0.74+ 지원 API 설정
                   if (window.Protocol && window.Protocol.InspectorBackend) {
                     const originalSend = window.Protocol.InspectorBackend.Connection.sendRawMessage;
                     window.Protocol.InspectorBackend.Connection.sendRawMessage = function(message) {
                       try {
                         const parsedMessage = JSON.parse(message);
-                        
+
                         // React Native 0.74+에서 지원하지 않는 API들만 필터링
                         const unsupportedApis = [
                           'Debugger.setBlackboxPatterns',
                           'Debugger.setBlackboxedRanges'
                         ];
-                        
+
                         if (parsedMessage.method && unsupportedApis.includes(parsedMessage.method)) {
                           console.log('Ignoring unsupported API call:', parsedMessage.method);
                           return; // API 호출 무시
                         }
-                        
+
                         // Network API 요청들을 수동으로 처리
                         const networkApis = [
                           'Network.enable',
                           'Network.setAttachDebugStack',
                           'Network.clearAcceptedEncodingsOverride'
                         ];
-                        
+
                         if (parsedMessage.method && networkApis.includes(parsedMessage.method)) {
                           console.log('Manually handling Network API request:', parsedMessage.method);
                           // 성공 응답 반환
@@ -164,7 +166,7 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl }) => {
                           window.Protocol.InspectorBackend.Connection.dispatch(JSON.stringify(response));
                           return;
                         }
-                        
+
                         // 지원되는 API는 정상적으로 전송
                         return originalSend.call(this, message);
                       } catch (error) {
@@ -172,18 +174,18 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl }) => {
                         return originalSend.call(this, message);
                       }
                     };
-                    
+
                     // Network API 직접 활성화
                     const enableNetworkDirectly = () => {
                       console.log('Directly enabling Network API...');
-                      
+
                       // Network.enable 직접 호출
                       const networkEnableMessage = {
                         id: Date.now(),
                         method: 'Network.enable',
                         params: {}
                       };
-                      
+
                       // 성공 응답 시뮬레이션
                       setTimeout(() => {
                         const response = {
@@ -193,20 +195,20 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl }) => {
                         window.Protocol.InspectorBackend.Connection.dispatch(JSON.stringify(response));
                         console.log('Network API enabled successfully');
                       }, 100);
-                      
+
                       // 원래 메시지도 전송 (React Native Inspector가 처리할 수 있는 경우)
                       originalSend.call(window.Protocol.InspectorBackend.Connection, JSON.stringify(networkEnableMessage));
                     };
-                    
+
                     // 즉시 실행
                     enableNetworkDirectly();
                   }
-                  
+
                   // Network API 수동 활성화 (더 강력한 방법)
                   const enableNetworkAPI = () => {
                     if (window.Protocol && window.Protocol.InspectorBackend) {
                       console.log('Manually enabling Network API...');
-                      
+
                       // Network.enable 요청
                       const networkEnableMessage = {
                         id: Date.now(),
@@ -214,7 +216,7 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl }) => {
                         params: {}
                       };
                       window.Protocol.InspectorBackend.Connection.sendRawMessage(JSON.stringify(networkEnableMessage));
-                      
+
                       // Network 패널 활성화
                       if (window.UI && window.UI.inspectorView) {
                         try {
@@ -226,17 +228,17 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl }) => {
                       }
                     }
                   };
-                  
+
                   // 여러 번 시도 (DevTools 로딩 시간 고려)
                   setTimeout(enableNetworkAPI, 1000);
                   setTimeout(enableNetworkAPI, 2000);
                   setTimeout(enableNetworkAPI, 3000);
-                  
+
                   // DevTools 완전 로드 후 다시 시도
                   window.addEventListener('load', () => {
                     setTimeout(enableNetworkAPI, 500);
                   });
-                  
+
                   // CDP 메시지 처리
                   window.addEventListener('message', function(event) {
                     if (event.data.type === 'CDP_MESSAGE') {
@@ -315,54 +317,190 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl }) => {
     );
   }
 
+  // XMLHttpRequest 로깅 활성화 함수
+  const handleEnableXHRLogging = async () => {
+    try {
+      const result = await (window as any).electronAPI?.enableXHRLogging();
+      if (result.success) {
+        setXhrLoggingEnabled(true);
+        alert('XMLHttpRequest 로깅이 활성화되었습니다!');
+      } else {
+        alert(`로깅 활성화 실패: ${result.error}`);
+      }
+    } catch (error) {
+      alert(`로깅 활성화 중 오류 발생: ${error}`);
+    }
+  };
+
+  // 로그 명령어 실행 함수
+  const handleExecuteLogCommand = async () => {
+    if (!logCommand.trim()) {
+      alert('실행할 명령어를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const result = await (window as any).electronAPI?.executeLogCommand(logCommand);
+      if (result.success) {
+        alert('명령어가 실행되었습니다!');
+        setLogCommand('');
+      } else {
+        alert(`명령어 실행 실패: ${result.error}`);
+      }
+    } catch (error) {
+      alert(`명령어 실행 중 오류 발생: ${error}`);
+    }
+  };
+
   return (
     <div style={{ position: 'relative', height: '100%' }}>
-      {/* 연결 상태 표시 */}
+      {/* XMLHttpRequest 로깅 컨트롤 패널 */}
       <div
         style={{
           position: 'absolute',
           top: '10px',
-          left: '10px',
+          right: '10px',
           zIndex: 1000,
-          padding: '0.5rem',
-          borderRadius: '4px',
-          fontSize: '0.8rem',
-          fontWeight: 'bold',
-          background:
-            connectionStatus === 'connected'
-              ? '#28a745'
-              : connectionStatus === 'connecting'
-              ? '#ffc107'
-              : '#dc3545',
-          color: 'white',
+          background: 'rgba(255, 255, 255, 0.95)',
+          padding: '1rem',
+          borderRadius: '8px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+          minWidth: '300px',
         }}
       >
-        {/* {connectionStatus === 'connected'
-          ? '연결됨'
-          : connectionStatus === 'connecting'
-          ? '연결 중...'
-          : '연결 안됨'} */}
-      </div>
+        <h4 style={{ margin: '0 0 1rem 0', color: '#333' }}>React Native 로깅 도구</h4>
 
-      {iframeRef.current?.src}
+        {/* XMLHttpRequest 로깅 활성화 */}
+        <div style={{ marginBottom: '1rem' }}>
+          <button
+            onClick={handleEnableXHRLogging}
+            disabled={xhrLoggingEnabled}
+            style={{
+              background: xhrLoggingEnabled ? '#28a745' : '#007bff',
+              color: 'white',
+              border: 'none',
+              padding: '0.5rem 1rem',
+              borderRadius: '4px',
+              cursor: xhrLoggingEnabled ? 'default' : 'pointer',
+              fontSize: '0.9rem',
+            }}
+          >
+            {xhrLoggingEnabled ? 'XMLHttpRequest 로깅 활성화됨' : 'XMLHttpRequest 로깅 활성화'}
+          </button>
+        </div>
 
-      {/* {isLoading && (
+        {/* 로그 명령어 실행 */}
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+            로그 명령어 실행:
+          </label>
+          <input
+            type='text'
+            value={logCommand}
+            onChange={e => setLogCommand(e.target.value)}
+            placeholder="예: console.log('Hello from DevTools')"
+            style={{
+              width: '100%',
+              padding: '0.5rem',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '0.9rem',
+              marginBottom: '0.5rem',
+            }}
+            onKeyPress={e => e.key === 'Enter' && handleExecuteLogCommand()}
+          />
+          <button
+            onClick={handleExecuteLogCommand}
+            style={{
+              background: '#6c757d',
+              color: 'white',
+              border: 'none',
+              padding: '0.5rem 1rem',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+            }}
+          >
+            실행
+          </button>
+        </div>
+
+        {/* 빠른 명령어 버튼들 */}
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+            빠른 명령어:
+          </label>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setLogCommand("console.log('XMLHttpRequest 로그 테스트')")}
+              style={{
+                background: '#17a2b8',
+                color: 'white',
+                border: 'none',
+                padding: '0.3rem 0.6rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+              }}
+            >
+              로그 테스트
+            </button>
+            <button
+              onClick={() => setLogCommand("console.log('현재 시간:', new Date().toISOString())")}
+              style={{
+                background: '#17a2b8',
+                color: 'white',
+                border: 'none',
+                padding: '0.3rem 0.6rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+              }}
+            >
+              시간 로그
+            </button>
+            <button
+              onClick={() => setLogCommand("console.log('XMLHttpRequest 객체:', XMLHttpRequest)")}
+              style={{
+                background: '#17a2b8',
+                color: 'white',
+                border: 'none',
+                padding: '0.3rem 0.6rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+              }}
+            >
+              XHR 객체
+            </button>
+          </div>
+        </div>
+
+        {/* 연결 상태 표시 */}
         <div
           style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 10,
-            background: 'rgba(255, 255, 255, 0.9)',
-            padding: '1rem',
-            borderRadius: '8px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+            padding: '0.5rem',
+            borderRadius: '4px',
+            fontSize: '0.8rem',
+            fontWeight: 'bold',
+            background:
+              connectionStatus === 'connected'
+                ? '#28a745'
+                : connectionStatus === 'connecting'
+                ? '#ffc107'
+                : '#dc3545',
+            color: 'white',
+            textAlign: 'center',
           }}
         >
-          DevTools 로딩 중...
+          {connectionStatus === 'connected'
+            ? 'React Native 연결됨'
+            : connectionStatus === 'connecting'
+            ? 'React Native 연결 중...'
+            : 'React Native 연결 안됨'}
         </div>
-      )} */}
+      </div>
+
       <iframe
         ref={iframeRef}
         title='Chrome DevTools'
@@ -370,7 +508,6 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl }) => {
           border: 'none',
           width: '100vw',
           height: '100vh',
-          // display: isLoading ? 'none' : 'block',
         }}
       />
     </div>

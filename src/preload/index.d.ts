@@ -7,6 +7,10 @@ declare global {
       getDevToolsPath: () => string;
       getDevToolsHTML: () => string;
       connectToCDP: (webSocketUrl: string) => Promise<{ success: boolean; error?: string }>;
+      enableXHRLogging: () => Promise<{ success: boolean; message?: string; error?: string }>;
+      executeLogCommand: (
+        command: string
+      ) => Promise<{ success: boolean; message?: string; error?: string }>;
     };
     api: unknown;
   }

@@ -4,449 +4,10 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { join } from 'node:path';
 import WebSocket from 'ws';
 import icon from '../../resources/icon.png?asset';
+import { ReactNativeInspectorProxy } from './services';
 
 // Chrome DevTools 연결 관리
 let chromeClient: CDP.Client | null = null;
-
-// React Native Inspector 프록시 관리
-class ReactNativeInspectorProxy {
-  private reactNativePort = 8082;
-  private proxyPort = 2052;
-  private reactNativeConnection: WebSocket | null = null;
-  private proxyServer: WebSocket.Server | null = null;
-  private devToolsClients = new Set<WebSocket>();
-  private requestIdCounter = 1;
-
-  async start() {
-    console.log('Starting React Native Inspector Proxy in Electron...');
-
-    // React Native Inspector에 연결
-    await this.connectToReactNative();
-
-    // 프록시 WebSocket 서버 시작
-    this.startProxyServer();
-  }
-
-  private async connectToReactNative() {
-    try {
-      // React Native Inspector의 타겟 목록 가져오기
-      const response = await fetch(`http://192.168.45.43:${this.reactNativePort}/json`);
-      const targets = await response.json();
-
-      console.log('React Native targets:', targets);
-
-      // Hermes React Native 앱 찾기
-      const hermesTarget = targets.find(
-        (target: any) => target.vm === 'Hermes' && target.type === 'node'
-      );
-
-      const experimentalTarget = targets.find((target: any) =>
-        target.title?.toLowerCase().includes('experimental')
-      );
-
-      const selectedTarget = experimentalTarget || hermesTarget;
-
-      if (selectedTarget) {
-        console.log('Found React Native target:', selectedTarget);
-        const webSocketUrl = selectedTarget.webSocketDebuggerUrl;
-
-        // 실제 WebSocket URL에 연결
-        const ws = new WebSocket(webSocketUrl.replace('localhost', '192.168.45.43'));
-
-        ws.on('open', () => {
-          console.log('Connected to React Native Inspector:', webSocketUrl);
-          this.reactNativeConnection = ws;
-        });
-
-        ws.on('message', data => {
-          try {
-            const message = JSON.parse(data.toString());
-            this.handleReactNativeMessage(message);
-          } catch (error) {
-            console.error('Error parsing React Native message:', error);
-          }
-        });
-
-        ws.on('close', () => {
-          console.log('Disconnected from React Native Inspector');
-          this.reactNativeConnection = null;
-        });
-
-        ws.on('error', error => {
-          console.error('React Native Inspector connection error:', error);
-          this.reactNativeConnection = null;
-        });
-      } else {
-        console.log('No suitable React Native target found');
-      }
-    } catch (error) {
-      console.error('Failed to connect to React Native Inspector:', error);
-    }
-  }
-
-  private startProxyServer() {
-    try {
-      this.proxyServer = new WebSocket.Server({ port: this.proxyPort });
-
-      this.proxyServer.on('connection', ws => {
-        console.log('Chrome DevTools connected to proxy');
-        this.devToolsClients.add(ws);
-
-        console.log('DevTools connected to proxy');
-
-        ws.on('message', data => {
-          try {
-            const message = JSON.parse(data.toString());
-            this.handleDevToolsMessage(ws, message);
-          } catch (error) {
-            console.error('Error parsing DevTools message:', error);
-          }
-        });
-
-        ws.on('close', () => {
-          console.log('Chrome DevTools disconnected from proxy');
-          this.devToolsClients.delete(ws);
-        });
-
-        ws.on('error', error => {
-          console.error('DevTools connection error:', error);
-          this.devToolsClients.delete(ws);
-        });
-      });
-
-      this.proxyServer.on('error', error => {
-        console.error('Proxy server error:', error);
-      });
-
-      console.log(`Proxy server running on port ${this.proxyPort}`);
-    } catch (error) {
-      console.error('Failed to start proxy server:', error);
-    }
-  }
-
-  private handleReactNativeMessage(message: any) {
-    console.log('React Native Inspector -> DevTools:', message);
-
-    // Runtime.evaluate 응답 처리 (로그 결과)
-    if (message.result && message.result.result) {
-      const result = message.result.result;
-      if (result.type === 'string' && result.value) {
-        console.log('React Native 실행 결과:', result.value);
-
-        // DevTools 콘솔에 로그 표시
-        this.broadcastToDevTools({
-          method: 'Runtime.consoleAPICalled',
-          params: {
-            type: 'log',
-            args: [
-              {
-                type: 'string',
-                value: `[React Native] ${result.value}`,
-              },
-            ],
-            timestamp: Date.now() / 1000,
-            executionContextId: 1,
-          },
-        });
-      }
-    }
-
-    // Console API 호출 처리 (console.log 등)
-    if (message.method === 'Runtime.consoleAPICalled') {
-      console.log('React Native Console API 호출:', message.params);
-
-      // DevTools 콘솔에 전달
-      this.broadcastToDevTools(message);
-    }
-
-    // 기타 React Native Inspector에서 받은 메시지를 그대로 DevTools로 전달
-    this.broadcastToDevTools(message);
-  }
-
-  private handleDevToolsMessage(ws: WebSocket, message: any) {
-    console.log('DevTools -> React Native Inspector:', message);
-
-    // DevTools에서 보낸 로그 메시지 처리
-    if (message.method === 'Runtime.evaluate' && message.params?.expression) {
-      const expression = message.params.expression;
-
-      // XMLHttpRequest 로그 관련 명령어 처리
-      if (expression.includes('console.log') || expression.includes('XMLHttpRequest')) {
-        console.log('DevTools에서 로그 명령어 감지:', expression);
-
-        // React Native Inspector로 로그 명령어 전달
-        if (
-          this.reactNativeConnection &&
-          this.reactNativeConnection.readyState === WebSocket.OPEN
-        ) {
-          // React Native에서 실행할 수 있는 형태로 변환
-          const rnLogMessage = {
-            method: 'Runtime.evaluate',
-            params: {
-              expression: expression,
-              returnByValue: true,
-              userGesture: true,
-            },
-            id: message.id,
-          };
-
-          this.reactNativeConnection.send(JSON.stringify(rnLogMessage));
-          return; // 원본 메시지는 전달하지 않음
-        }
-      }
-    }
-
-    // 기타 DevTools 메시지를 React Native Inspector로 그대로 전달
-    if (this.reactNativeConnection && this.reactNativeConnection.readyState === WebSocket.OPEN) {
-      this.reactNativeConnection.send(JSON.stringify(message));
-    }
-  }
-
-  private broadcastToDevTools(message: any) {
-    this.devToolsClients.forEach(client => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(message));
-      }
-    });
-  }
-
-  // XMLHttpRequest 로깅 활성화
-  enableXHRLogging() {
-    const xhrLoggingScript = `
-      (function() {
-        const originalXHR = window.XMLHttpRequest;
-        const xhrLogs = [];
-
-        function XHRLogger() {
-          const xhr = new originalXHR();
-          const startTime = Date.now();
-
-          // 요청 시작 로그
-          xhr.addEventListener('readystatechange', function() {
-            if (xhr.readyState === 1) {
-              const logData = {
-                method: xhr._method || 'GET',
-                url: xhr._url || 'unknown',
-                timestamp: new Date().toISOString()
-              };
-              console.log('[XHR] Request started:', logData);
-
-              // DevTools로 로그 전송
-              if (window.Protocol && window.Protocol.InspectorBackend) {
-                window.Protocol.InspectorBackend.Connection.dispatch(JSON.stringify({
-                  method: 'Runtime.consoleAPICalled',
-                  params: {
-                    type: 'log',
-                    args: [
-                      {
-                        type: 'string',
-                        value: '[XHR] Request started: ' + JSON.stringify(logData)
-                      }
-                    ],
-                    timestamp: Date.now() / 1000,
-                    executionContextId: 1
-                  }
-                }));
-              }
-            }
-
-            if (xhr.readyState === 4) {
-              const duration = Date.now() - startTime;
-              const logData = {
-                method: xhr._method || 'GET',
-                url: xhr._url || 'unknown',
-                status: xhr.status,
-                statusText: xhr.statusText,
-                duration: duration + 'ms',
-                responseSize: xhr.responseText?.length || 0,
-                timestamp: new Date().toISOString()
-              };
-              console.log('[XHR] Request completed:', logData);
-
-              // DevTools로 로그 전송
-              if (window.Protocol && window.Protocol.InspectorBackend) {
-                window.Protocol.InspectorBackend.Connection.dispatch(JSON.stringify({
-                  method: 'Runtime.consoleAPICalled',
-                  params: {
-                    type: 'log',
-                    args: [
-                      {
-                        type: 'string',
-                        value: '[XHR] Request completed: ' + JSON.stringify(logData)
-                      }
-                    ],
-                    timestamp: Date.now() / 1000,
-                    executionContextId: 1
-                  }
-                }));
-              }
-
-              // 응답 데이터 로그 (선택적)
-              if (xhr.responseText && xhr.responseText.length < 1000) {
-                console.log('[XHR] Response data:', xhr.responseText);
-
-                // DevTools로 응답 데이터 전송
-                if (window.Protocol && window.Protocol.InspectorBackend) {
-                  window.Protocol.InspectorBackend.Connection.dispatch(JSON.stringify({
-                    method: 'Runtime.consoleAPICalled',
-                    params: {
-                      type: 'log',
-                      args: [
-                        {
-                          type: 'string',
-                          value: '[XHR] Response data: ' + xhr.responseText
-                        }
-                      ],
-                      timestamp: Date.now() / 1000,
-                      executionContextId: 1
-                    }
-                  }));
-                }
-              }
-            }
-          });
-
-          // 에러 로그
-          xhr.addEventListener('error', function() {
-            const logData = {
-              method: xhr._method || 'GET',
-              url: xhr._url || 'unknown',
-              timestamp: new Date().toISOString()
-            };
-            console.error('[XHR] Request failed:', logData);
-
-            // DevTools로 에러 로그 전송
-            if (window.Protocol && window.Protocol.InspectorBackend) {
-              window.Protocol.InspectorBackend.Connection.dispatch(JSON.stringify({
-                method: 'Runtime.consoleAPICalled',
-                params: {
-                  type: 'error',
-                  args: [
-                    {
-                      type: 'string',
-                      value: '[XHR] Request failed: ' + JSON.stringify(logData)
-                    }
-                  ],
-                  timestamp: Date.now() / 1000,
-                  executionContextId: 1
-                }
-              }));
-            }
-          });
-
-          // 원본 메서드 오버라이드
-          const originalOpen = xhr.open;
-          xhr.open = function(method, url) {
-            xhr._method = method;
-            xhr._url = url;
-            return originalOpen.apply(this, arguments);
-          };
-
-          return xhr;
-        }
-
-        // 전역 XMLHttpRequest 교체
-        window.XMLHttpRequest = XHRLogger;
-
-        console.log('[XHR Logger] XMLHttpRequest logging enabled');
-        return 'XMLHttpRequest logging enabled';
-      })();
-    `;
-
-    // React Native Inspector로 로깅 스크립트 전송
-    if (this.reactNativeConnection && this.reactNativeConnection.readyState === WebSocket.OPEN) {
-      const logMessage = {
-        method: 'Runtime.evaluate',
-        params: {
-          expression: xhrLoggingScript,
-          returnByValue: true,
-          userGesture: true,
-        },
-        id: this.requestIdCounter++,
-      };
-
-      this.reactNativeConnection.send(JSON.stringify(logMessage));
-      console.log('XMLHttpRequest 로깅 스크립트 전송됨');
-    }
-  }
-
-  // 네트워크 이벤트 시뮬레이션 (테스트용)
-  simulateNetworkEvents() {
-    setInterval(() => {
-      const requestId = this.requestIdCounter++;
-
-      // 요청 시작
-      this.broadcastToDevTools({
-        method: 'Network.requestWillBeSent',
-        params: {
-          requestId: requestId.toString(),
-          loaderId: '1',
-          documentURL: 'https://api.example.com/data',
-          request: {
-            url: 'https://api.example.com/data',
-            method: 'GET',
-            headers: {
-              'User-Agent': 'React Native App',
-            },
-          },
-          timestamp: Date.now() / 1000,
-          wallTime: Date.now() / 1000,
-          initiator: {
-            type: 'script',
-          },
-        },
-      });
-
-      // 응답 수신
-      setTimeout(() => {
-        this.broadcastToDevTools({
-          method: 'Network.responseReceived',
-          params: {
-            requestId: requestId.toString(),
-            loaderId: '1',
-            timestamp: Date.now() / 1000,
-            type: 'Document',
-            response: {
-              url: 'https://api.example.com/data',
-              status: 200,
-              statusText: 'OK',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              mimeType: 'application/json',
-            },
-          },
-        });
-      }, 100);
-
-      // 요청 완료
-      setTimeout(() => {
-        this.broadcastToDevTools({
-          method: 'Network.requestFinished',
-          params: {
-            requestId: requestId.toString(),
-            timestamp: Date.now() / 1000,
-            encodedDataLength: 100,
-          },
-        });
-      }, 200);
-    }, 5000); // 5초마다 시뮬레이션
-  }
-
-  stop() {
-    if (this.reactNativeConnection) {
-      this.reactNativeConnection.close();
-      this.reactNativeConnection = null;
-    }
-
-    if (this.proxyServer) {
-      this.proxyServer.close();
-      this.proxyServer = null;
-    }
-
-    this.devToolsClients.clear();
-  }
-}
 
 // React Native Inspector 프록시 인스턴스
 const rnInspectorProxy = new ReactNativeInspectorProxy();
@@ -487,8 +48,8 @@ function createWindow(): void {
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+  if (is.dev && process.env.ELECTRON_RENDERER_URL) {
+    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
@@ -546,10 +107,11 @@ app.whenReady().then(() => {
       const client = await CDP({ port: 9222 });
       await client.close();
       event.reply('chrome-connection-status', { connected: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       event.reply('chrome-connection-status', {
         connected: false,
-        error: error.message,
+        error: errorMessage,
       });
     }
   });
@@ -568,9 +130,10 @@ app.whenReady().then(() => {
 
       console.log('CDP connected successfully');
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('CDP connection failed:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: errorMessage };
     }
   });
 
@@ -579,11 +142,12 @@ app.whenReady().then(() => {
     // React Native Inspector가 없을 때 테스트용 네트워크 이벤트 시뮬레이션 활성화
     setTimeout(() => {
       console.log('rnInspectorProxy', rnInspectorProxy);
-      if (!rnInspectorProxy['reactNativeConnection']) {
+      if (!rnInspectorProxy.isConnected()) {
         console.log('Starting network event simulation for testing...');
         rnInspectorProxy.simulateNetworkEvents();
       } else {
         // React Native Inspector가 연결되면 XMLHttpRequest 로깅 활성화
+        // TODO: 언젠가 작업해두고 지울 코드
         console.log('Enabling XMLHttpRequest logging...');
         rnInspectorProxy.enableXHRLogging();
       }
@@ -595,18 +159,16 @@ app.whenReady().then(() => {
     try {
       rnInspectorProxy.enableXHRLogging();
       return { success: true, message: 'XMLHttpRequest 로깅이 활성화되었습니다.' };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: errorMessage };
     }
   });
 
   // DevTools에서 직접 로그 명령어 실행 IPC 핸들러
   ipcMain.handle('execute-log-command', async (_event, command: string) => {
     try {
-      if (
-        rnInspectorProxy['reactNativeConnection'] &&
-        rnInspectorProxy['reactNativeConnection'].readyState === WebSocket.OPEN
-      ) {
+      if (rnInspectorProxy.isConnected()) {
         const logMessage = {
           method: 'Runtime.evaluate',
           params: {
@@ -614,22 +176,25 @@ app.whenReady().then(() => {
             returnByValue: true,
             userGesture: true,
           },
-          id: rnInspectorProxy['requestIdCounter']++,
+          id: rnInspectorProxy.incrementRequestIdCounter(),
         };
 
-        rnInspectorProxy['reactNativeConnection'].send(JSON.stringify(logMessage));
+        const connection = rnInspectorProxy.getReactNativeConnection();
+        if (connection) {
+          connection.send(JSON.stringify(logMessage));
+        }
         return { success: true, message: '로그 명령어가 실행되었습니다.' };
-      } else {
-        return { success: false, error: 'React Native Inspector에 연결되지 않았습니다.' };
       }
-    } catch (error: any) {
-      return { success: false, error: error.message };
+      return { success: false, error: 'React Native Inspector에 연결되지 않았습니다.' };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: errorMessage };
     }
   });
 
   createWindow();
 
-  app.on('activate', function () {
+  app.on('activate', () => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -8,46 +8,117 @@ export class ReactNativeInspectorProxy {
   private proxyServer: WebSocket.Server | null = null;
   private devToolsClients = new Set<WebSocket>();
   private requestIdCounter = 1;
+  private reconnectInterval: NodeJS.Timeout | null = null;
+  private isStarting = false;
 
   async start(): Promise<void> {
+    if (this.isStarting) {
+      console.log('Already starting React Native Inspector Proxy...');
+      return;
+    }
+
+    this.isStarting = true;
     console.log('Starting React Native Inspector Proxy in Electron...');
 
-    // React Native Inspector에 연결
-    await this.connectToReactNative();
+    try {
+      // React Native Inspector에 연결
+      await this.connectToReactNative();
 
-    // 프록시 WebSocket 서버 시작
-    this.startProxyServer();
+      // 프록시 WebSocket 서버 시작
+      this.startProxyServer();
+
+      // 연결 상태 모니터링 시작
+      this.startConnectionMonitoring();
+    } catch (error) {
+      console.error('Failed to start React Native Inspector Proxy:', error);
+    } finally {
+      this.isStarting = false;
+    }
   }
 
   private async connectToReactNative(): Promise<void> {
     try {
-      // React Native Inspector의 타겟 목록 가져오기
-      const response = await fetch(`http://localhost:${this.reactNativePort}/json`);
-      const targets = await response.json();
-
-      console.log('React Native targets:', targets);
-
-      // Hermes React Native 앱 찾기
-      const hermesTarget = targets.find(
-        (target: { vm: string; type: string }) => target.vm === 'Hermes' && target.type === 'node'
+      console.log(
+        `Attempting to connect to React Native Inspector on port ${this.reactNativePort}...`
       );
 
-      const experimentalTarget = targets.find((target: { title?: string }) =>
+      // React Native Inspector의 타겟 목록 가져오기
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃
+
+      let targets: Array<{
+        title?: string;
+        type: string;
+        vm?: string;
+        webSocketDebuggerUrl?: string;
+      }>;
+
+      try {
+        const response = await fetch(`http://localhost:${this.reactNativePort}/json`, {
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        targets = await response.json();
+        console.log('React Native targets found:', targets.length);
+        console.log(
+          'Available targets:',
+          targets.map(
+            (t: { title?: string; type: string; vm?: string; webSocketDebuggerUrl?: string }) => ({
+              title: t.title,
+              type: t.type,
+              vm: t.vm,
+              webSocketDebuggerUrl: t.webSocketDebuggerUrl,
+            })
+          )
+        );
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error('Connection timeout - React Native Inspector not responding');
+        }
+        throw error;
+      }
+
+      // Hermes React Native 앱 찾기
+      const hermesTarget = targets.find(target => target.vm === 'Hermes' && target.type === 'node');
+
+      const experimentalTarget = targets.find(target =>
         target.title?.toLowerCase().includes('experimental')
       );
 
-      const selectedTarget = experimentalTarget || hermesTarget;
+      // 일반적인 React Native 타겟도 찾기
+      const reactNativeTarget = targets.find(
+        target => target.title?.toLowerCase().includes('react native') || target.type === 'node'
+      );
+
+      const selectedTarget = experimentalTarget || hermesTarget || reactNativeTarget || targets[0];
 
       if (selectedTarget) {
-        console.log('Found React Native target:', selectedTarget);
+        console.log('Selected React Native target:', selectedTarget);
         const webSocketUrl = selectedTarget.webSocketDebuggerUrl;
+
+        if (!webSocketUrl) {
+          throw new Error('No WebSocket debugger URL found in target');
+        }
 
         // 실제 WebSocket URL에 연결
         const ws = new WebSocket(webSocketUrl);
 
         ws.on('open', () => {
-          console.log('Connected to React Native Inspector:', webSocketUrl);
+          console.log('✅ Successfully connected to React Native Inspector:', webSocketUrl);
           this.reactNativeConnection = ws;
+
+          // 재연결 인터벌 정리
+          if (this.reconnectInterval) {
+            clearInterval(this.reconnectInterval);
+            this.reconnectInterval = null;
+          }
         });
 
         ws.on('message', data => {
@@ -59,20 +130,35 @@ export class ReactNativeInspectorProxy {
           }
         });
 
-        ws.on('close', () => {
-          console.log('Disconnected from React Native Inspector');
+        ws.on('close', (code, reason) => {
+          console.log(
+            `❌ Disconnected from React Native Inspector (code: ${code}, reason: ${reason})`
+          );
           this.reactNativeConnection = null;
+          this.scheduleReconnect();
         });
 
         ws.on('error', error => {
-          console.error('React Native Inspector connection error:', error);
+          console.error('❌ React Native Inspector connection error:', error);
           this.reactNativeConnection = null;
+          this.scheduleReconnect();
         });
+
+        // 연결 타임아웃 설정
+        setTimeout(() => {
+          if (ws.readyState !== WebSocket.OPEN) {
+            console.error('❌ WebSocket connection timeout');
+            ws.terminate();
+            this.scheduleReconnect();
+          }
+        }, 10000); // 10초 타임아웃
       } else {
-        console.log('No suitable React Native target found');
+        console.log('❌ No suitable React Native target found');
+        this.scheduleReconnect();
       }
     } catch (error) {
-      console.error('Failed to connect to React Native Inspector:', error);
+      console.error('❌ Failed to connect to React Native Inspector:', error);
+      this.scheduleReconnect();
     }
   }
 
@@ -433,6 +519,21 @@ export class ReactNativeInspectorProxy {
     return this.reactNativeConnection?.readyState === WebSocket.OPEN;
   }
 
+  // 연결 상태 상세 정보
+  getConnectionStatus(): {
+    reactNative: boolean;
+    proxyServer: boolean;
+    devToolsClients: number;
+    reconnectScheduled: boolean;
+  } {
+    return {
+      reactNative: this.isConnected(),
+      proxyServer: this.proxyServer !== null,
+      devToolsClients: this.devToolsClients.size,
+      reconnectScheduled: this.reconnectInterval !== null,
+    };
+  }
+
   // 요청 ID 카운터 접근자
   getRequestIdCounter(): number {
     return this.requestIdCounter;
@@ -449,6 +550,12 @@ export class ReactNativeInspectorProxy {
   }
 
   stop(): void {
+    // 재연결 인터벌 정리
+    if (this.reconnectInterval) {
+      clearInterval(this.reconnectInterval);
+      this.reconnectInterval = null;
+    }
+
     if (this.reactNativeConnection) {
       this.reactNativeConnection.close();
       this.reactNativeConnection = null;
@@ -460,5 +567,37 @@ export class ReactNativeInspectorProxy {
     }
 
     this.devToolsClients.clear();
+    console.log('🛑 React Native Inspector Proxy stopped');
+  }
+
+  private scheduleReconnect(): void {
+    if (this.reconnectInterval) {
+      return; // 이미 재연결이 예약되어 있음
+    }
+
+    console.log('🔄 Scheduling reconnection in 5 seconds...');
+    this.reconnectInterval = setInterval(async () => {
+      console.log('🔄 Attempting to reconnect to React Native Inspector...');
+      await this.connectToReactNative();
+    }, 5000);
+  }
+
+  private startConnectionMonitoring(): void {
+    // 연결 상태를 주기적으로 확인
+    setInterval(() => {
+      const isConnected = this.isConnected();
+      const clientCount = this.devToolsClients.size;
+
+      console.log(
+        `📊 Connection Status - React Native: ${
+          isConnected ? '✅ Connected' : '❌ Disconnected'
+        }, DevTools Clients: ${clientCount}`
+      );
+
+      if (!isConnected && !this.reconnectInterval) {
+        console.log('🔄 React Native connection lost, scheduling reconnection...');
+        this.scheduleReconnect();
+      }
+    }, 10000); // 10초마다 확인
   }
 }

@@ -192,6 +192,29 @@ app.whenReady().then(() => {
     }
   });
 
+  // React Native Inspector 프록시 연결 상태 확인 IPC 핸들러
+  ipcMain.handle('get-rn-proxy-status', async () => {
+    try {
+      const status = rnInspectorProxy.getConnectionStatus();
+      return { success: true, status };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: errorMessage };
+    }
+  });
+
+  // React Native Inspector 프록시 재시작 IPC 핸들러
+  ipcMain.handle('restart-rn-proxy', async () => {
+    try {
+      rnInspectorProxy.stop();
+      await rnInspectorProxy.start();
+      return { success: true, message: 'React Native Inspector 프록시가 재시작되었습니다.' };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: errorMessage };
+    }
+  });
+
   createWindow();
 
   app.on('activate', () => {

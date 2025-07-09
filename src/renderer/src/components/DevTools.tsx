@@ -60,7 +60,6 @@ const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl }) => {
           iframeRef.current.src = url.toString();
         } else {
           console.error('Hermes React Native target not found');
-          console.log('Available targets:', targets);
           setError('React Native 앱을 찾을 수 없습니다. 앱이 실행 중인지 확인해주세요.');
         }
       } catch (error) {

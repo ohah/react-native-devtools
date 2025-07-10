@@ -149,20 +149,8 @@ app.whenReady().then(() => {
         // React Native Inspector가 연결되면 XMLHttpRequest 로깅 활성화
         // TODO: 언젠가 작업해두고 지울 코드
         console.log('Enabling XMLHttpRequest logging...');
-        rnInspectorProxy.enableXHRLogging();
       }
     }, 3000);
-  });
-
-  // XMLHttpRequest 로깅 활성화 IPC 핸들러
-  ipcMain.handle('enable-xhr-logging', async () => {
-    try {
-      rnInspectorProxy.enableXHRLogging();
-      return { success: true, message: 'XMLHttpRequest 로깅이 활성화되었습니다.' };
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      return { success: false, error: errorMessage };
-    }
   });
 
   // DevTools에서 직접 로그 명령어 실행 IPC 핸들러

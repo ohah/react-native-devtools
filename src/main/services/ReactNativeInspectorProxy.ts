@@ -244,6 +244,59 @@ export class ReactNativeInspectorProxy {
   private handleDevToolsMessage(ws: WebSocket, message: Record<string, unknown>): void {
     console.log('DevTools -> React Native Inspector:', message);
 
+    // Network.enable 명령 처리 - DevTools가 네트워크 모니터링을 활성화하려고 할 때
+    if (message.method === 'Network.enable') {
+      console.log(
+        '🔗 [Network.enable] DevTools requested Network.enable - activating network monitoring'
+      );
+      console.log('🔗 [Network.enable] Message details:', {
+        id: message.id,
+        method: message.method,
+        params: message.params,
+      });
+
+      // DevTools에 성공 응답 전송
+      this.broadcastToDevTools({
+        id: message.id,
+        result: {},
+      });
+
+      console.log('🔗 [Network.enable] Success response sent to DevTools');
+      return;
+    }
+
+    // Network.disable 명령 처리
+    if (message.method === 'Network.disable') {
+      console.log('🔗 [Network.disable] DevTools requested Network.disable');
+      console.log('🔗 [Network.disable] Message details:', {
+        id: message.id,
+        method: message.method,
+        params: message.params,
+      });
+
+      // DevTools에 성공 응답 전송
+      this.broadcastToDevTools({
+        id: message.id,
+        result: {},
+      });
+
+      console.log('🔗 [Network.disable] Success response sent to DevTools');
+      return;
+    }
+
+    // DevTools에서 보내는 네트워크 이벤트는 React Native Inspector로 전달하지 않음
+    // 대신 DevTools로 다시 전달하여 네트워크 탭에 표시되도록 함
+    if (message.method?.toString().startsWith('Network.')) {
+      console.log(
+        '🔗 [Network Event] DevTools network event - forwarding back to DevTools:',
+        message.method
+      );
+
+      // DevTools로 네트워크 이벤트를 다시 전달
+      this.broadcastToDevTools(message);
+      return; // React Native Inspector로는 전달하지 않음
+    }
+
     // DevTools에서 보낸 로그 메시지 처리
     if (
       message.method === 'Runtime.evaluate' &&
@@ -277,7 +330,7 @@ export class ReactNativeInspectorProxy {
       }
     }
 
-    // 기타 DevTools 메시지를 React Native Inspector로 그대로 전달
+    // 기타 DevTools 메시지를 React Native Inspector로 전달
     if (this.reactNativeConnection && this.reactNativeConnection.readyState === WebSocket.OPEN) {
       this.reactNativeConnection.send(JSON.stringify(message));
     }

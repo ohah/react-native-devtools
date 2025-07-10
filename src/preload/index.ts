@@ -23,14 +23,6 @@ const api = {
       return { success: false, error: error.message };
     }
   },
-  // XMLHttpRequest 로깅 활성화
-  enableXHRLogging: async (): Promise<{ success: boolean; message?: string; error?: string }> => {
-    try {
-      return await (window as any).electronAPI?.ipcRenderer?.invoke('enable-xhr-logging');
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
-  },
   // DevTools에서 로그 명령어 실행
   executeLogCommand: async (
     command: string

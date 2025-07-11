@@ -33,7 +33,7 @@ React Native 앱을 위한 일렉트론 기반 디버깅 도구입니다. Chrome
 
 ```bash
 # 저장소 클론
-git clone https://github.com/your-username/react-native-devtools.git
+git clone https://github.com/ohah/react-native-devtools.git
 cd react-native-devtools
 
 # 의존성 설치
@@ -116,7 +116,7 @@ NODE_ENV=production
 
 ### CDP 연결 실패
 
-- React Native 앱의 디버거 포트(19000) 확인
+- React Native 앱의 디버거 포트 확인
 - 네트워크 연결 상태 확인
 
 ## 기여하기
@@ -134,4 +134,4 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 ## 연락처
 
 - 이슈 리포트: [GitHub Issues](https://github.com/your-username/react-native-devtools/issues)
-- 이메일: your-email@example.com
+- 이메일: bookyoon173@gamil.com

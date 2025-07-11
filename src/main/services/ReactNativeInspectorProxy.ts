@@ -11,6 +11,9 @@ export class ReactNativeInspectorProxy {
   private reconnectInterval: NodeJS.Timeout | null = null;
   private isStarting = false;
 
+  // 응답 본문을 저장할 Map 추가
+  private responseBodyData = new Map<string, { body: string; base64Encoded: boolean }>();
+
   async start(): Promise<void> {
     if (this.isStarting) {
       console.log('Already starting React Native Inspector Proxy...');
@@ -205,6 +208,40 @@ export class ReactNativeInspectorProxy {
   private handleReactNativeMessage(message: Record<string, unknown>): void {
     console.log('React Native Inspector -> DevTools:', message);
 
+    // Network.getResponseBody 응답 처리 - 더 구체적인 조건으로 수정
+    if (message.id && message.result && !message.method) {
+      console.log('🔗 [Network.getResponseBody] Response from React Native Inspector:', {
+        id: message.id,
+        hasResult: !!message.result,
+        resultKeys: message.result ? Object.keys(message.result as Record<string, unknown>) : [],
+        body: message.result ? (message.result as Record<string, unknown>).body : 'undefined',
+      });
+
+      // DevTools로 응답 전달
+      this.broadcastToDevTools(message);
+      console.log('🔗 [Network.getResponseBody] Response sent to DevTools');
+      return;
+    }
+
+    // Network.getRequestPostData 응답 처리
+    if (message.id && message.result && !message.method) {
+      console.log('🔗 [Network.getRequestPostData] Response from React Native Inspector:', message);
+      this.broadcastToDevTools(message);
+      return;
+    }
+
+    // 네이티브에서 보내는 네트워크 이벤트 처리
+    if (message.method?.toString().startsWith('Network.')) {
+      console.log(
+        '🔗 [Native Network Event] Received from React Native Inspector:',
+        message.method
+      );
+
+      // 네이티브에서 보내는 네트워크 이벤트를 DevTools로 전달
+      this.broadcastToDevTools(message);
+      return;
+    }
+
     // Runtime.evaluate 응답 처리 (로그 결과)
     if (message.result && (message.result as Record<string, unknown>)?.result) {
       const result = (message.result as Record<string, unknown>).result as Record<string, unknown>;
@@ -243,6 +280,27 @@ export class ReactNativeInspectorProxy {
 
   private handleDevToolsMessage(ws: WebSocket, message: Record<string, unknown>): void {
     console.log('DevTools -> React Native Inspector:', message);
+
+    // Network.responseBodyData 이벤트 처리 - 응답 본문 저장
+    if (message.method === 'Network.responseBodyData') {
+      const requestId = (message.params as Record<string, unknown>)?.requestId as string;
+      const body = (message.params as Record<string, unknown>)?.body as string;
+      const base64Encoded = (message.params as Record<string, unknown>)?.base64Encoded as boolean;
+
+      console.log('🔗 [Network.responseBodyData] Storing response body for requestId:', requestId, {
+        bodyLength: body?.length || 0,
+        base64Encoded: base64Encoded,
+      });
+
+      // 응답 본문 저장
+      this.responseBodyData.set(requestId, {
+        body: body || '',
+        base64Encoded: base64Encoded || false,
+      });
+
+      // DevTools로는 전달하지 않음 (저장만 함)
+      return;
+    }
 
     // Network.enable 명령 처리 - DevTools가 네트워크 모니터링을 활성화하려고 할 때
     if (message.method === 'Network.enable') {
@@ -284,6 +342,79 @@ export class ReactNativeInspectorProxy {
       return;
     }
 
+    // Network.getResponseBody 명령 처리 - 응답 본문 요청
+    if (message.method === 'Network.getResponseBody') {
+      const requestId = (message.params as Record<string, unknown>)?.requestId as string;
+      console.log(
+        '🔗 [Network.getResponseBody] DevTools requested response body for requestId:',
+        requestId
+      );
+
+      // 저장된 응답 본문 확인
+      const storedResponse = this.responseBodyData.get(requestId);
+      if (storedResponse) {
+        console.log('🔗 [Network.getResponseBody] Found stored response body:', {
+          requestId,
+          bodyLength: storedResponse.body.length,
+          base64Encoded: storedResponse.base64Encoded,
+        });
+
+        // 저장된 응답 본문 반환
+        this.broadcastToDevTools({
+          id: message.id,
+          result: {
+            base64Encoded: storedResponse.base64Encoded,
+            body: storedResponse.body,
+          },
+        });
+      } else {
+        console.log(
+          '❌ [Network.getResponseBody] No stored response body found for requestId:',
+          requestId
+        );
+
+        // React Native Inspector로 요청 전달 (기존 방식)
+        if (
+          this.reactNativeConnection &&
+          this.reactNativeConnection.readyState === WebSocket.OPEN
+        ) {
+          console.log('🔗 [Network.getResponseBody] Forwarding to React Native Inspector');
+          this.reactNativeConnection.send(JSON.stringify(message));
+        } else {
+          console.log('❌ [Network.getResponseBody] React Native Inspector not connected');
+          // 연결이 없으면 빈 응답 반환
+          this.broadcastToDevTools({
+            id: message.id,
+            result: { base64Encoded: false, body: '' },
+          });
+        }
+      }
+      return;
+    }
+
+    // Network.getRequestPostData 명령 처리 - 요청 본문 요청
+    if (message.method === 'Network.getRequestPostData') {
+      const requestId = (message.params as Record<string, unknown>)?.requestId as string;
+      console.log(
+        '🔗 [Network.getRequestPostData] DevTools requested request post data for requestId:',
+        requestId
+      );
+
+      // React Native Inspector로 Network.getRequestPostData 요청 전달
+      if (this.reactNativeConnection && this.reactNativeConnection.readyState === WebSocket.OPEN) {
+        console.log('🔗 [Network.getRequestPostData] Forwarding to React Native Inspector');
+        this.reactNativeConnection.send(JSON.stringify(message));
+      } else {
+        console.log('❌ [Network.getRequestPostData] React Native Inspector not connected');
+        // 연결이 없으면 빈 응답 반환
+        this.broadcastToDevTools({
+          id: message.id,
+          result: { postData: '' },
+        });
+      }
+      return;
+    }
+
     // DevTools에서 보내는 네트워크 이벤트는 React Native Inspector로 전달하지 않음
     // 대신 DevTools로 다시 전달하여 네트워크 탭에 표시되도록 함
     if (message.method?.toString().startsWith('Network.')) {
@@ -291,6 +422,20 @@ export class ReactNativeInspectorProxy {
         '🔗 [Network Event] DevTools network event - forwarding back to DevTools:',
         message.method
       );
+
+      // Network.requestWillBeSent 이벤트의 상세 정보 로깅
+      if (message.method === 'Network.requestWillBeSent') {
+        const params = message.params as Record<string, unknown>;
+        const request = params?.request as Record<string, unknown>;
+        console.log('🔗 [Network.requestWillBeSent] Detailed request info:', {
+          url: request?.url,
+          method: request?.method,
+          postData: request?.postData,
+          headers: request?.headers,
+          hasPostData: !!request?.postData,
+          postDataLength: request?.postData ? (request.postData as string).length : 0,
+        });
+      }
 
       // DevTools로 네트워크 이벤트를 다시 전달
       this.broadcastToDevTools(message);
@@ -337,9 +482,22 @@ export class ReactNativeInspectorProxy {
   }
 
   private broadcastToDevTools(message: Record<string, unknown>): void {
+    console.log(
+      '🔗 [broadcastToDevTools] Broadcasting message to',
+      this.devToolsClients.size,
+      'clients'
+    );
+
     for (const client of this.devToolsClients) {
       if (client.readyState === WebSocket.OPEN) {
+        console.log('🔗 [broadcastToDevTools] Sending to client:', {
+          messageId: message.id,
+          method: message.method,
+          hasResult: !!message.result,
+        });
         client.send(JSON.stringify(message));
+      } else {
+        console.log('❌ [broadcastToDevTools] Client not ready, state:', client.readyState);
       }
     }
   }
@@ -492,5 +650,21 @@ export class ReactNativeInspectorProxy {
         this.scheduleReconnect();
       }
     }, 10000); // 10초마다 확인
+  }
+
+  // 응답 본문 데이터 접근자 메서드 추가
+  getStoredResponseBody(requestId: string): { body: string; base64Encoded: boolean } | undefined {
+    return this.responseBodyData.get(requestId);
+  }
+
+  // 저장된 응답 본문 개수 확인
+  getStoredResponseCount(): number {
+    return this.responseBodyData.size;
+  }
+
+  // 저장된 응답 본문 모두 삭제
+  clearStoredResponses(): void {
+    this.responseBodyData.clear();
+    console.log('🔗 [clearStoredResponses] All stored response bodies cleared');
   }
 }

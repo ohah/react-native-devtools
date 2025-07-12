@@ -1,0 +1,49 @@
+{
+  "name": "react-native-devtools",
+  "version": "1.0.0",
+  "description": "React Native DevTools - A standalone debugging tool for React Native apps",
+  "main": "./out/main/index.js",
+  "author": "React Native DevTools",
+  "homepage": "https://github.com/your-username/react-native-devtools",
+  "scripts": {
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "start": "electron-vite preview",
+    "dev": "electron-vite dev",
+    "build": "npm run typecheck && electron-vite build",
+    "postinstall": "electron-builder install-app-deps",
+    "build:unpack": "npm run build && electron-builder --dir",
+    "build:win": "npm run build && electron-builder --win",
+    "build:mac": "electron-vite build && electron-builder --mac",
+    "build:linux": "electron-vite build && electron-builder --linux"
+  },
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.1",
+    "@electron-toolkit/utils": "^4.0.0",
+    "adm-zip": "^0.5.16",
+    "chrome-devtools-frontend": "^1.0.676721",
+    "chrome-remote-interface": "^0.33.3",
+    "react-devtools-core": "^4.28.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@electron-toolkit/tsconfig": "^1.0.1",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.14.1",
+    "@types/react": "^19.1.1",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^35.1.5",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^3.1.0",
+    "fs-extra": "^11.3.0",
+    "oxlint": "^1.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.2.6"
+  }
+}

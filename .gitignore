@@ -45,6 +45,7 @@ pids
 # Coverage directory used by tools like istanbul
 coverage/
 
+
 # nyc test coverage
 .nyc_output
 
@@ -94,3 +95,6 @@ dist-electron/
 # Temporary files
 tmp/
 temp/
+
+
+!public/**/**/

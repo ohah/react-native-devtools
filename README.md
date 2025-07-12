@@ -1,137 +1,135 @@
-# React Native DevTools
+# Turborepo starter
 
-React Native 앱을 위한 일렉트론 기반 디버깅 도구입니다. Chrome DevTools를 통합하여 React Native 앱의 디버깅, 프로파일링, 네트워크 모니터링 등을 지원합니다.
+This Turborepo starter is maintained by the Turborepo core team.
 
-## 주요 기능
+## Using this example
 
-- 🚀 **Chrome DevTools 통합**: Chrome DevTools UI를 일렉트론 내에서 iframe으로 표시
-- 🔌 **Chrome DevTools Protocol (CDP) 지원**: React Native 앱과의 실시간 통신
-- 🌐 **웹소켓 서버**: React Native Metro와의 연결 지원
-- 🎯 **React Inspector**: React 컴포넌트 트리 검사
-- 📊 **Redux DevTools**: Redux 상태 관리 디버깅
-- 🔍 **네트워크 모니터링**: API 요청/응답 추적
-- 📱 **디바이스 에뮬레이션**: 다양한 디바이스 환경 시뮬레이션
+Run the following command:
 
-## 기술 스택
-
-- **Electron**: 크로스 플랫폼 데스크톱 앱 프레임워크
-- **Vite**: 빠른 빌드 도구
-- **React**: UI 라이브러리
-- **TypeScript**: 타입 안전성
-- **Chrome DevTools Frontend**: 디버깅 UI
-- **Chrome Remote Interface**: CDP 통신
-- **WebSocket**: 실시간 통신
-
-## 설치 및 실행
-
-### 필수 요구사항
-
-- Node.js 18+
-- npm 또는 yarn
-
-### 설치
-
-```bash
-# 저장소 클론
-git clone https://github.com/ohah/react-native-devtools.git
-cd react-native-devtools
-
-# 의존성 설치
-npm install
+```sh
+npx create-turbo@latest
 ```
 
-### 개발 모드 실행
+## What's inside?
 
-```bash
-npm run dev
+This Turborepo includes the following packages/apps:
+
+### Apps and Packages
+
+- `docs`: a [Next.js](https://nextjs.org/) app
+- `web`: another [Next.js](https://nextjs.org/) app
+- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
+- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
+- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+
+Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+
+### Utilities
+
+This Turborepo has some additional tools already setup for you:
+
+- [TypeScript](https://www.typescriptlang.org/) for static type checking
+- [ESLint](https://eslint.org/) for code linting
+- [Prettier](https://prettier.io) for code formatting
+
+### Build
+
+To build all apps and packages, run the following command:
+
+```
+cd my-turborepo
+
+# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
+turbo build
+
+# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
+npx turbo build
+yarn dlx turbo build
+pnpm exec turbo build
 ```
 
-### 프로덕션 빌드
-
-```bash
-npm run build
-```
-
-## 사용법
-
-1. **앱 시작**: `npm run dev`로 일렉트론 앱을 시작합니다.
-2. **React Native 앱 연결**: React Native 앱에서 `ws://localhost:8081`로 웹소켓 연결을 설정합니다.
-3. **디버깅 시작**: Chrome DevTools UI를 통해 앱을 디버깅합니다.
-
-## 프로젝트 구조
+You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
 
 ```
-react-native-devtools/
-├── src/
-│   ├── main/           # 일렉트론 메인 프로세스
-│   ├── preload/        # 일렉트론 프리로드 스크립트
-│   └── renderer/       # 렌더러 프로세스 (React 앱)
-├── public/
-│   └── devtools/       # Chrome DevTools 정적 파일
-├── scripts/            # 유틸리티 스크립트
-└── resources/          # 앱 리소스
+# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
+turbo build --filter=docs
+
+# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
+npx turbo build --filter=docs
+yarn exec turbo build --filter=docs
+pnpm exec turbo build --filter=docs
 ```
 
-## 설정
+### Develop
 
-### 포트 설정
+To develop all apps and packages, run the following command:
 
-- **웹소켓 서버**: 8081 (React Native Metro 연결용)
-- **Chrome DevTools**: 19000 (React Native 기본 디버거 포트)
+```
+cd my-turborepo
 
-### 환경 변수
+# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
+turbo dev
 
-```bash
-# 개발 모드
-NODE_ENV=development
-
-# 프로덕션 모드
-NODE_ENV=production
+# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
+npx turbo dev
+yarn exec turbo dev
+pnpm exec turbo dev
 ```
 
-## 개발 가이드
+You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
 
-### 새로운 기능 추가
+```
+# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
+turbo dev --filter=web
 
-1. `src/renderer/src/components/`에 새로운 컴포넌트 추가
-2. `src/main/index.ts`에서 필요한 IPC 핸들러 추가
-3. `src/preload/index.ts`에서 렌더러와 메인 프로세스 간 통신 설정
+# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
+npx turbo dev --filter=web
+yarn exec turbo dev --filter=web
+pnpm exec turbo dev --filter=web
+```
 
-### Chrome DevTools 확장
+### Remote Caching
 
-1. `public/devtools/front_end/`에 새로운 DevTools 모듈 추가
-2. CDP 프로토콜을 통해 새로운 디버깅 기능 구현
+> [!TIP]
+> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
 
-## 문제 해결
+Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
 
-### 웹소켓 연결 실패
+By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
 
-- React Native 앱이 올바른 포트(8081)로 연결하는지 확인
-- 방화벽 설정 확인
+```
+cd my-turborepo
 
-### Chrome DevTools 로드 실패
+# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
+turbo login
 
-- `public/devtools/front_end/` 경로가 올바른지 확인
-- CSP 설정 확인
+# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
+npx turbo login
+yarn exec turbo login
+pnpm exec turbo login
+```
 
-### CDP 연결 실패
+This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
 
-- React Native 앱의 디버거 포트 확인
-- 네트워크 연결 상태 확인
+Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
 
-## 기여하기
+```
+# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
+turbo link
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
+npx turbo link
+yarn exec turbo link
+pnpm exec turbo link
+```
 
-## 라이선스
+## Useful Links
 
-MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
+Learn more about the power of Turborepo:
 
-## 연락처
-
-- 이슈 리포트: [GitHub Issues](https://github.com/your-username/react-native-devtools/issues)
-- 이메일: bookyoon173@gamil.com
+- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
+- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
+- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
+- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
+- [Configuration Options](https://turborepo.com/docs/reference/configuration)
+- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)

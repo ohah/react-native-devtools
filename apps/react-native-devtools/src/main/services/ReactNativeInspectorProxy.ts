@@ -278,7 +278,7 @@ export class ReactNativeInspectorProxy {
     this.broadcastToDevTools(message);
   }
 
-  private handleDevToolsMessage(ws: WebSocket, message: Record<string, unknown>): void {
+  private handleDevToolsMessage(_ws: WebSocket, message: Record<string, unknown>): void {
     console.log('DevTools -> React Native Inspector:', message);
 
     // Network.responseBodyData 이벤트 처리 - 응답 본문 저장

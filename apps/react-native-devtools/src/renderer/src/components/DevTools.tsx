@@ -1,10 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-interface DevToolsProps {
-  webSocketUrl?: string;
-}
-
-const DevTools: React.FC<DevToolsProps> = ({ webSocketUrl }) => {
+const DevTools: React.FC = () => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [error, setError] = useState<string | null>(null);
 

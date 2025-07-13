@@ -2,7 +2,6 @@ import { electronApp, is } from '@electron-toolkit/utils';
 import CDP from 'chrome-remote-interface';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { join } from 'node:path';
-import WebSocket from 'ws';
 import icon from '../../resources/icon.png?asset';
 import { ReactNativeInspectorProxy } from './services';
 

@@ -1,27 +1,27 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
-import { resolve } from 'path'
+import react from '@vitejs/plugin-react';
+import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
+import { resolve } from 'node:path';
 
-console.log('asdf', __dirname)
+console.log('asdf', __dirname);
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
   },
   preload: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
   },
   renderer: {
     resolve: {
       alias: {
-        '@renderer': resolve('src/renderer/src')
-      }
+        '@renderer': resolve('src/renderer/src'),
+      },
     },
     plugins: [react()],
     server: {
       fs: {
-        allow: ['..']
-      }
+        allow: ['..'],
+      },
     },
-    publicDir: `${__dirname}/public`
-  }
-})
+    publicDir: `${__dirname}/public`,
+  },
+});

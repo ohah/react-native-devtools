@@ -2,7 +2,7 @@ import WebSocket from 'ws';
 
 // React Native Inspector 프록시 관리
 export class ReactNativeInspectorProxy {
-  private reactNativePort = 8082;
+  private reactNativePort = 8081;
   private proxyPort = 2052;
   private reactNativeConnection: WebSocket | null = null;
   private proxyServer: WebSocket.Server | null = null;

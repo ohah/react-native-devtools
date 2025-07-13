@@ -93,7 +93,7 @@ importers:
         specifier: ^6.2.6
         version: 6.3.5(@types/node@22.15.3)(terser@5.43.1)(yaml@2.8.0)
 
-  packages/TurboModuleExample:
+  packages/react-native-devtools:
     dependencies:
       react:
         specifier: 18.2.0

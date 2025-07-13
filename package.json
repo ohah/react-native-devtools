@@ -14,7 +14,10 @@
     "typescript": "5.8.3"
   },
   "pnpm": {
-    "enablePrePostScripts": true
+    "enablePrePostScripts": true,
+    "patchedDependencies": {
+      "react-native": "patches/react-native.patch"
+    }
   },
   "packageManager": "pnpm@10.13.1",
   "engines": {

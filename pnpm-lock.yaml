@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  react-native:
+    hash: 4b49b88d8f036577e89871a7158d11bf00bafea353d0b2da717a3168bda231fa
+    path: patches/react-native.patch
+
 importers:
 
   .:
@@ -95,7 +100,7 @@ importers:
         version: 18.2.0
       react-native:
         specifier: 0.72.0
-        version: 0.72.0(@babel/core@7.28.0)(@babel/preset-env@7.28.0(@babel/core@7.28.0))(encoding@0.1.13)(react@18.2.0)
+        version: 0.72.0(patch_hash=4b49b88d8f036577e89871a7158d11bf00bafea353d0b2da717a3168bda231fa)(@babel/core@7.28.0)(@babel/preset-env@7.28.0(@babel/core@7.28.0))(encoding@0.1.13)(react@18.2.0)
     devDependencies:
       '@babel/core':
         specifier: ^7.20.0
@@ -6057,11 +6062,11 @@ snapshots:
 
   '@react-native/normalize-colors@0.72.0': {}
 
-  '@react-native/virtualized-lists@0.72.8(react-native@0.72.0(@babel/core@7.28.0)(@babel/preset-env@7.28.0(@babel/core@7.28.0))(encoding@0.1.13)(react@18.2.0))':
+  '@react-native/virtualized-lists@0.72.8(react-native@0.72.0(patch_hash=4b49b88d8f036577e89871a7158d11bf00bafea353d0b2da717a3168bda231fa)(@babel/core@7.28.0)(@babel/preset-env@7.28.0(@babel/core@7.28.0))(encoding@0.1.13)(react@18.2.0))':
     dependencies:
       invariant: 2.2.4
       nullthrows: 1.1.1
-      react-native: 0.72.0(@babel/core@7.28.0)(@babel/preset-env@7.28.0(@babel/core@7.28.0))(encoding@0.1.13)(react@18.2.0)
+      react-native: 0.72.0(patch_hash=4b49b88d8f036577e89871a7158d11bf00bafea353d0b2da717a3168bda231fa)(@babel/core@7.28.0)(@babel/preset-env@7.28.0(@babel/core@7.28.0))(encoding@0.1.13)(react@18.2.0)
 
   '@rolldown/pluginutils@1.0.0-beta.19': {}
 
@@ -9334,7 +9339,7 @@ snapshots:
 
   react-is@18.3.1: {}
 
-  react-native@0.72.0(@babel/core@7.28.0)(@babel/preset-env@7.28.0(@babel/core@7.28.0))(encoding@0.1.13)(react@18.2.0):
+  react-native@0.72.0(patch_hash=4b49b88d8f036577e89871a7158d11bf00bafea353d0b2da717a3168bda231fa)(@babel/core@7.28.0)(@babel/preset-env@7.28.0(@babel/core@7.28.0))(encoding@0.1.13)(react@18.2.0):
     dependencies:
       '@jest/create-cache-key-function': 29.7.0
       '@react-native-community/cli': 11.3.2(@babel/core@7.28.0)(encoding@0.1.13)
@@ -9345,7 +9350,7 @@ snapshots:
       '@react-native/gradle-plugin': 0.72.11
       '@react-native/js-polyfills': 0.72.1
       '@react-native/normalize-colors': 0.72.0
-      '@react-native/virtualized-lists': 0.72.8(react-native@0.72.0(@babel/core@7.28.0)(@babel/preset-env@7.28.0(@babel/core@7.28.0))(encoding@0.1.13)(react@18.2.0))
+      '@react-native/virtualized-lists': 0.72.8(react-native@0.72.0(patch_hash=4b49b88d8f036577e89871a7158d11bf00bafea353d0b2da717a3168bda231fa)(@babel/core@7.28.0)(@babel/preset-env@7.28.0(@babel/core@7.28.0))(encoding@0.1.13)(react@18.2.0))
       abort-controller: 3.0.0
       anser: 1.4.10
       base64-js: 1.5.1

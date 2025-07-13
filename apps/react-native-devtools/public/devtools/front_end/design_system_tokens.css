@@ -92,7 +92,6 @@
   --sys-color-state-on-header-hover: var(--ref-palette-primary20);
   --sys-color-state-text-highlight: var(--ref-palette-primary40);
   --sys-color-state-on-text-highlight: var(--ref-palette-neutral-variant100);
-  --sys-color-state-scrim: rgb(0 0 0 / 60%);
 
   /* Surfaces */
 
@@ -383,7 +382,7 @@
     --sys-color-token-property-special: var(--ref-palette-cyan80);
     --sys-color-token-type: var(--ref-palette-blue70);
     --sys-color-token-definition: var(--ref-palette-blue70);
-    --sys-color-token-variable-special: var(--ref-palette-tertiary80);
+    --sys-color-token-variable-special: var(--ref-palette-blue40);
     --sys-color-token-builtin: var(--ref-palette-blue80);
     --sys-color-token-keyword: var(--ref-palette-purple60);
     --sys-color-token-number: var(--ref-palette-green90);
@@ -490,12 +489,6 @@
     --monospace-font-family: monospace;
     --source-code-font-size: var(--sys-size-6);
     --source-code-font-family: monospace;
-  }
-
-  &.platform-screenshot-test {
-    --default-font-family: roboto;
-    --monospace-font-family: roboto;
-    --source-code-font-family: roboto;
   }
 
   --ref-typeface-weight-regular: 400;

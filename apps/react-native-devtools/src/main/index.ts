@@ -143,7 +143,7 @@ app.whenReady().then(() => {
       console.log('rnInspectorProxy', rnInspectorProxy);
       if (!rnInspectorProxy.isConnected()) {
         console.log('Starting network event simulation for testing...');
-        rnInspectorProxy.simulateNetworkEvents();
+        // rnInspectorProxy.simulateNetworkEvents();
       } else {
         // React Native Inspector가 연결되면 XMLHttpRequest 로깅 활성화
         // TODO: 언젠가 작업해두고 지울 코드

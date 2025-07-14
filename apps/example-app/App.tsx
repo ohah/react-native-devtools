@@ -7,7 +7,6 @@
 
 import React, { type PropsWithChildren } from 'react';
 import {
-  Pressable,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -16,6 +15,9 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
+import { Provider } from 'react-redux';
+import Counter from './src/components/Counter';
+import TodoList from './src/components/TodoList';
 
 import {
   Colors,
@@ -24,6 +26,7 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
+import { store } from './src/store/store';
 
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -57,7 +60,7 @@ function Section({ children, title }: SectionProps): JSX.Element {
   );
 }
 
-function App(): JSX.Element {
+function AppContent(): JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
@@ -70,21 +73,15 @@ function App(): JSX.Element {
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         backgroundColor={backgroundStyle.backgroundColor}
       />
-      <Pressable
-        onPress={() => {
-          fetch('https://jsonplaceholder.typicode.com/todos/1').catch(err => {
-            console.log(err);
-          });
-          fetch('https://asdfas.com').catch(err => {
-            console.log(err);
-          });
-          console.log('test');
-        }}
-      >
-        <Text>test</Text>
-      </Pressable>
       <ScrollView contentInsetAdjustmentBehavior='automatic' style={backgroundStyle}>
         <Header />
+
+        {/* Redux Counter 예제 */}
+        <Counter />
+
+        {/* Redux Todo List 예제 */}
+        <TodoList />
+
         <View
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
@@ -105,6 +102,14 @@ function App(): JSX.Element {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function App(): JSX.Element {
+  return (
+    <Provider store={store}>
+      <AppContent />
+    </Provider>
   );
 }
 

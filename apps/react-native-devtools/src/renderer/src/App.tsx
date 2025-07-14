@@ -4,11 +4,9 @@ import DevTools from './components/DevTools';
 
 function App() {
   return (
-    <div className='App'>
-      <div className='devtools-container'>
-        <DevTools />
-        <Root />
-      </div>
+    <div className='flex flex-row h-dvh w-dvw'>
+      <Root />
+      <DevTools />
     </div>
   );
 }

@@ -66,7 +66,7 @@ const DevTools: React.FC = () => {
 
   return (
     <div className='relative h-full'>
-      <iframe ref={iframeRef} className='border-none w-[50vw] h-[100vh]' title='Chrome DevTools' />
+      <iframe ref={iframeRef} className='border-none w-[100vw] h-full' title='Chrome DevTools' />
     </div>
   );
 };

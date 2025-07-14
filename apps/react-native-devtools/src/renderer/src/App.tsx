@@ -1,4 +1,5 @@
-import './App.css';
+import { Root } from '@redux-devtools/app';
+import './globlas.css';
 import DevTools from './components/DevTools';
 
 function App() {
@@ -6,6 +7,7 @@ function App() {
     <div className='App'>
       <div className='devtools-container'>
         <DevTools />
+        <Root />
       </div>
     </div>
   );

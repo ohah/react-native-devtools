@@ -2,8 +2,15 @@ import React, { useEffect, useRef } from 'react';
 
 const DevTools: React.FC = () => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
+    // 이미 초기화되었으면 스킵
+    if (initializedRef.current) {
+      console.log('DevTools가 이미 초기화되었습니다.');
+      return;
+    }
+
     const fetchReactNativeTargets = async () => {
       try {
         if (iframeRef.current) {
@@ -53,6 +60,7 @@ const DevTools: React.FC = () => {
           params.append('reactNativeMode', 'true');
 
           iframeRef.current.src = url.toString();
+          initializedRef.current = true;
         } else {
           console.error('Hermes React Native target not found');
         }
@@ -66,7 +74,7 @@ const DevTools: React.FC = () => {
 
   return (
     <div className='relative h-full'>
-      <iframe ref={iframeRef} className='border-none w-[100vw] h-full' title='Chrome DevTools' />
+      <iframe ref={iframeRef} className='border-none w-full h-full' title='Chrome DevTools' />
     </div>
   );
 };

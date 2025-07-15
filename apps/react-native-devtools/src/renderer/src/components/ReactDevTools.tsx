@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 
 // 전역 서버 인스턴스 관리
 let globalDevToolsInstance: any = null;
@@ -7,25 +7,16 @@ let isServerStarting = false;
 const ReactDevTools: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loadingStatus, setLoadingStatus] = useState<string>('Starting the server…');
-  const [isConnected, setIsConnected] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initializedRef = useRef(false);
 
-  useEffect(() => {
-    // DOM 노드가 준비된 후에 초기화
-    if (containerRef.current) {
-      initializeReactDevTools();
+  const initializeReactDevTools = useCallback(() => {
+    // 이미 초기화되었으면 스킵
+    if (initializedRef.current) {
+      console.log('React DevTools가 이미 초기화되었습니다.');
+      return;
     }
 
-    // 컴포넌트 언마운트 시 정리
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  const initializeReactDevTools = () => {
     try {
       // 이미 서버가 시작 중이면 대기
       if (isServerStarting) {
@@ -38,7 +29,7 @@ const ReactDevTools: React.FC = () => {
       if (globalDevToolsInstance) {
         console.log('기존 서버 인스턴스를 사용합니다.');
         setLoadingStatus('Using existing server instance');
-        setIsConnected(true);
+        initializedRef.current = true;
         return;
       }
 
@@ -89,21 +80,22 @@ const ReactDevTools: React.FC = () => {
         .setContentDOMNode(containerRef.current)
         .setDisconnectedCallback(() => {
           console.log('React DevTools 연결 해제됨');
-          setIsConnected(false);
           setLoadingStatus('Disconnected');
           // 연결 해제 시 전역 인스턴스 정리
           globalDevToolsInstance = null;
+          initializedRef.current = false;
         })
         .setStatusListener((status: string) => {
           console.log('React DevTools 상태:', status);
           setLoadingStatus(status);
           if (status.includes('connected') || status.includes('listening')) {
-            setIsConnected(true);
             isServerStarting = false;
+            initializedRef.current = true;
           }
           if (status.includes('Failed to start')) {
             isServerStarting = false;
             globalDevToolsInstance = null;
+            initializedRef.current = false;
           }
         })
         .startServer(port, host, options);
@@ -127,14 +119,6 @@ const ReactDevTools: React.FC = () => {
           document.execCommand('copy');
           document.body.removeChild(textArea);
         }
-
-        setShowConfirmation(true);
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-        timeoutRef.current = setTimeout(() => {
-          setShowConfirmation(false);
-        }, 1000);
       };
 
       // 외부 링크 열기
@@ -157,11 +141,26 @@ const ReactDevTools: React.FC = () => {
       (window as any).serverUrlIp = serverIp;
     } catch (error) {
       console.error('React DevTools 초기화 실패:', error);
-      setLoadingStatus(`Failed to initialize React DevTools: ${error.message}`);
+      setLoadingStatus(`Failed to initialize React DevTools: ${(error as Error).message}`);
       isServerStarting = false;
       globalDevToolsInstance = null;
+      initializedRef.current = false;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // DOM 노드가 준비된 후에 초기화
+    if (containerRef.current && !initializedRef.current) {
+      initializeReactDevTools();
+    }
+
+    // 컴포넌트 언마운트 시 정리 (실제 언마운트가 아닌 경우에는 정리하지 않음)
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [initializeReactDevTools]);
 
   const handleCopyClick = (text: string) => {
     (window as any).selectAllAndCopy?.(text);
@@ -176,225 +175,92 @@ const ReactDevTools: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        height: '100%',
-        fontFamily: 'sans-serif',
-        backgroundColor: '#fff',
-        color: '#777d88',
-      }}
-    >
+    <div className='h-full relative font-sans bg-white text-gray-600'>
       {/* DevTools UI가 렌더링될 컨테이너 */}
-      <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
+      <div ref={containerRef} className='h-full w-full z-50 absolute' />
 
-      {/* 기존 UI는 연결되지 않았을 때만 표시 */}
-      {!isConnected && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            height: '100%',
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'auto',
-            WebkitUserSelect: 'none',
-            WebkitAppRegion: 'drag',
-            backgroundColor: '#fff',
-            zIndex: 1,
-          }}
-        >
-          <div
-            style={{
-              padding: '0.5rem',
-              display: 'inline-block',
-              position: 'absolute',
-              right: '0.5rem',
-              top: '0.5rem',
-              borderRadius: '0.25rem',
-              backgroundColor: 'rgba(0, 1, 2, 0.6)',
-              color: 'white',
-              border: 'none',
-              fontWeight: 100,
-              fontStyle: 'italic',
-            }}
-          >
-            Waiting for React to connect…
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'stretch',
-              justifyContent: 'center',
-              padding: '1rem',
-              WebkitAppRegion: 'none',
-            }}
-          >
-            <div
-              style={{
-                textAlign: 'center',
-                borderRadius: '0.5rem',
-                backgroundColor: '#f7f7f7',
-                border: '1px solid #eee',
-                color: '#777d88',
-                padding: '1rem',
-                marginTop: '1rem',
-              }}
-            >
-              <div
-                style={{
-                  textAlign: 'center',
-                  color: '#5f6673',
-                  fontSize: '1.25rem',
-                  marginBottom: '0.5rem',
-                }}
-              >
-                React Native
-              </div>
-              <div style={{ lineHeight: '1.5rem' }}>
-                Open the{' '}
-                <a
-                  href='#'
-                  onClick={e => {
-                    e.preventDefault();
-                    handleExternalLink(
-                      'https://reactnative.dev/docs/debugging#accessing-the-in-app-developer-menu'
-                    );
-                  }}
-                  style={{
-                    color: '#1478fa',
-                    textDecoration: 'none',
-                  }}
-                >
-                  in-app developer menu
-                </a>{' '}
-                to connect.
-              </div>
-            </div>
-
-            <div
-              style={{
-                textAlign: 'center',
-                borderRadius: '0.5rem',
-                backgroundColor: '#f7f7f7',
-                border: '1px solid #eee',
-                color: '#777d88',
-                padding: '1rem',
-                marginTop: '1rem',
-              }}
-            >
-              <div
-                style={{
-                  textAlign: 'center',
-                  color: '#5f6673',
-                  fontSize: '1.25rem',
-                  marginBottom: '0.5rem',
-                }}
-              >
-                React DOM
-              </div>
-              <div style={{ lineHeight: '1.5rem' }}>
-                <div style={{ marginBottom: '0.25rem' }}>
-                  Add one of the following (click to copy):
-                </div>
-                <span
-                  onClick={() =>
-                    handleCopyClick(`<script src="${(window as any).serverUrl}"></script>`)
-                  }
-                  style={{
-                    display: 'block',
-                    fontWeight: 100,
-                    padding: '0 0.25rem',
-                    border: '1px solid #aaa',
-                    backgroundColor: '#fff',
-                    color: '#666',
-                    margin: '0.5rem 0',
-                    userSelect: 'all',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {`<script src="${(window as any).serverUrl || 'http://localhost:8098'}"></script>`}
-                </span>
-                <span
-                  onClick={() =>
-                    handleCopyClick(`<script src="${(window as any).serverUrlIp}"></script>`)
-                  }
-                  style={{
-                    display: 'block',
-                    fontWeight: 100,
-                    padding: '0 0.25rem',
-                    border: '1px solid #aaa',
-                    backgroundColor: '#fff',
-                    color: '#666',
-                    margin: '0.5rem 0',
-                    userSelect: 'all',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {`<script src="${(window as any).serverUrlIp || 'http://localhost:8098'}"></script>`}
-                </span>
-                to the top of the page you want to debug,
-                <br />
-                <strong>before</strong> importing React DOM.
-              </div>
-            </div>
-
-            <div
-              style={{
-                textAlign: 'center',
-                borderRadius: '0.5rem',
-                backgroundColor: '#f7f7f7',
-                border: '1px solid #eee',
-                color: '#777d88',
-                padding: '1rem',
-                marginTop: '1rem',
-              }}
-            >
-              <div
-                style={{
-                  textAlign: 'center',
-                  color: '#5f6673',
-                  fontSize: '1.25rem',
-                  marginBottom: '0.5rem',
-                }}
-              >
-                Profiler
-              </div>
-              <div style={{ lineHeight: '1.5rem' }}>
-                Open the{' '}
-                <a
-                  href='#'
-                  onClick={e => {
-                    e.preventDefault();
-                    handleProfilerClick();
-                  }}
-                  style={{
-                    color: '#1478fa',
-                    textDecoration: 'none',
-                  }}
-                >
-                  Profiler tab
-                </a>{' '}
-                to inspect saved profiles.
-              </div>
-            </div>
-
-            <div
-              style={{
-                textAlign: 'center',
-                marginTop: '1rem',
-              }}
-            >
-              {loadingStatus}
-            </div>
-          </div>
+      {/* 기존 UI는 항상 표시하되 DevTools가 렌더링되면 가려짐 */}
+      <div className='absolute inset-0 flex flex-col items-center justify-center overflow-auto select-none bg-white z-10'>
+        <div className='absolute top-2 right-2 px-2 py-1 rounded bg-black/60 text-white text-xs font-light italic'>
+          Waiting for React to connect…
         </div>
-      )}
+
+        <div className='flex flex-col items-stretch justify-center p-4'>
+          <div className='text-center rounded-lg bg-gray-50 border border-gray-200 text-gray-600 p-4 mt-4'>
+            <div className='text-center text-gray-700 text-xl mb-2'>React Native</div>
+            <div className='leading-6'>
+              Open the{' '}
+              <button
+                type='button'
+                onClick={() =>
+                  handleExternalLink(
+                    'https://reactnative.dev/docs/debugging#accessing-the-in-app-developer-menu'
+                  )
+                }
+                className='text-blue-500 hover:text-blue-700 bg-transparent border-none cursor-pointer p-0 font-inherit'
+              >
+                in-app developer menu
+              </button>{' '}
+              to connect.
+            </div>
+          </div>
+
+          <div className='text-center rounded-lg bg-gray-50 border border-gray-200 text-gray-600 p-4 mt-4'>
+            <div className='text-center text-gray-700 text-xl mb-2'>React DOM</div>
+            <div className='leading-6'>
+              <div className='mb-1'>Add one of the following (click to copy):</div>
+              <button
+                type='button'
+                onClick={() =>
+                  handleCopyClick(`<script src="${(window as any).serverUrl}"></script>`)
+                }
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleCopyClick(`<script src="${(window as any).serverUrl}"></script>`);
+                  }
+                }}
+                className='block font-light px-1 border border-gray-400 bg-white text-gray-600 my-2 select-all cursor-pointer w-full text-left font-inherit'
+              >
+                {`<script src="${(window as any).serverUrl || 'http://localhost:8098'}"></script>`}
+              </button>
+              <button
+                type='button'
+                onClick={() =>
+                  handleCopyClick(`<script src="${(window as any).serverUrlIp}"></script>`)
+                }
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleCopyClick(`<script src="${(window as any).serverUrlIp}"></script>`);
+                  }
+                }}
+                className='block font-light px-1 border border-gray-400 bg-white text-gray-600 my-2 select-all cursor-pointer w-full text-left font-inherit'
+              >
+                {`<script src="${(window as any).serverUrlIp || 'http://localhost:8098'}"></script>`}
+              </button>
+              to the top of the page you want to debug,
+              <br />
+              <strong>before</strong> importing React DOM.
+            </div>
+          </div>
+
+          <div className='text-center rounded-lg bg-gray-50 border border-gray-200 text-gray-600 p-4 mt-4'>
+            <div className='text-center text-gray-700 text-xl mb-2'>Profiler</div>
+            <div className='leading-6'>
+              Open the{' '}
+              <button
+                type='button'
+                onClick={handleProfilerClick}
+                className='text-blue-500 hover:text-blue-700 bg-transparent border-none cursor-pointer p-0 font-inherit'
+              >
+                Profiler tab
+              </button>{' '}
+              to inspect saved profiles.
+            </div>
+          </div>
+
+          <div className='text-center mt-4'>{loadingStatus}</div>
+        </div>
+      </div>
     </div>
   );
 };

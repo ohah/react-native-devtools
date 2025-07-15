@@ -1,5 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+// 전역 서버 인스턴스 관리
+let globalDevToolsInstance: any = null;
+let isServerStarting = false;
+
 const ReactDevTools: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loadingStatus, setLoadingStatus] = useState<string>('Starting the server…');
@@ -8,7 +12,12 @@ const ReactDevTools: React.FC = () => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    initializeReactDevTools();
+    // DOM 노드가 준비된 후에 초기화
+    if (containerRef.current) {
+      initializeReactDevTools();
+    }
+
+    // 컴포넌트 언마운트 시 정리
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -18,11 +27,44 @@ const ReactDevTools: React.FC = () => {
 
   const initializeReactDevTools = () => {
     try {
-      // window.api는 preload.js에서 정의됨
+      // 이미 서버가 시작 중이면 대기
+      if (isServerStarting) {
+        console.log('서버가 이미 시작 중입니다. 대기 중...');
+        setLoadingStatus('Server is starting...');
+        return;
+      }
+
+      // 이미 서버가 실행 중이면 기존 인스턴스 사용
+      if (globalDevToolsInstance) {
+        console.log('기존 서버 인스턴스를 사용합니다.');
+        setLoadingStatus('Using existing server instance');
+        setIsConnected(true);
+        return;
+      }
+
+      // API 접근 확인
+      if (!(window as any).api) {
+        console.error('API가 노출되지 않았습니다');
+        setLoadingStatus('API not available');
+        return;
+      }
+
       const { electron, readEnv, ip, getDevTools } = (window as any).api;
+
+      // 각 API 함수 확인
+      if (!readEnv || !ip || !getDevTools) {
+        console.error('필요한 API 함수가 누락되었습니다:', {
+          readEnv: !!readEnv,
+          ip: !!ip,
+          getDevTools: !!getDevTools,
+        });
+        setLoadingStatus('Required APIs not available');
+        return;
+      }
+
       const { options, useHttps, host, protocol, port } = readEnv();
 
-      const localIp = ip.address();
+      const localIp = ip.address;
       const defaultPort = (port === 443 && useHttps) || (port === 80 && !useHttps);
       const server = defaultPort ? `${protocol}://${host}` : `${protocol}://${host}:${port}`;
       const serverIp = defaultPort
@@ -32,28 +74,45 @@ const ReactDevTools: React.FC = () => {
       // DevTools 인스턴스 가져오기
       const devtools = getDevTools();
       if (!devtools) {
+        console.error('React DevTools를 로드할 수 없습니다');
         setLoadingStatus('Failed to load React DevTools');
         return;
       }
 
+      console.log('React DevTools 초기화 시작...', { port, host, options });
+
+      // 서버 시작 플래그 설정
+      isServerStarting = true;
+
       // DevTools 서버 시작
-      const devToolsInstance = devtools
+      globalDevToolsInstance = devtools
         .setContentDOMNode(containerRef.current)
         .setDisconnectedCallback(() => {
+          console.log('React DevTools 연결 해제됨');
           setIsConnected(false);
           setLoadingStatus('Disconnected');
+          // 연결 해제 시 전역 인스턴스 정리
+          globalDevToolsInstance = null;
         })
         .setStatusListener((status: string) => {
+          console.log('React DevTools 상태:', status);
           setLoadingStatus(status);
-          if (status.includes('connected')) {
+          if (status.includes('connected') || status.includes('listening')) {
             setIsConnected(true);
+            isServerStarting = false;
+          }
+          if (status.includes('Failed to start')) {
+            isServerStarting = false;
+            globalDevToolsInstance = null;
           }
         })
         .startServer(port, host, options);
 
       // 전역에 저장 (Profiler 탭에서 사용)
-      (window as any).devtools = devToolsInstance;
-      (window as any).server = devToolsInstance;
+      (window as any).devtools = globalDevToolsInstance;
+      (window as any).server = globalDevToolsInstance;
+
+      console.log('React DevTools 서버 시작됨');
 
       // 클립보드 복사 함수
       const selectAllAndCopy = (text: string) => {
@@ -98,7 +157,9 @@ const ReactDevTools: React.FC = () => {
       (window as any).serverUrlIp = serverIp;
     } catch (error) {
       console.error('React DevTools 초기화 실패:', error);
-      setLoadingStatus('Failed to initialize React DevTools');
+      setLoadingStatus(`Failed to initialize React DevTools: ${error.message}`);
+      isServerStarting = false;
+      globalDevToolsInstance = null;
     }
   };
 
@@ -115,193 +176,225 @@ const ReactDevTools: React.FC = () => {
   };
 
   return (
-    <div className='react-devtools-container'>
-      <div
-        className='container'
-        style={{
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'auto',
-          WebkitUserSelect: 'none',
-          WebkitAppRegion: 'drag',
-        }}
-      >
-        <div className='waiting-header'>Waiting for React to connect…</div>
+    <div
+      style={{
+        height: '100%',
+        fontFamily: 'sans-serif',
+        backgroundColor: '#fff',
+        color: '#777d88',
+      }}
+    >
+      {/* DevTools UI가 렌더링될 컨테이너 */}
+      <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
 
+      {/* 기존 UI는 연결되지 않았을 때만 표시 */}
+      {!isConnected && (
         <div
-          className='boxes'
           style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            height: '100%',
+            width: '100%',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'stretch',
+            alignItems: 'center',
             justifyContent: 'center',
-            padding: '1rem',
-            WebkitAppRegion: 'none',
+            overflow: 'auto',
+            WebkitUserSelect: 'none',
+            WebkitAppRegion: 'drag',
+            backgroundColor: '#fff',
+            zIndex: 1,
           }}
         >
-          <div className='box'>
-            <div className='box-header'>React Native</div>
-            <div className='box-content'>
-              Open the{' '}
-              <a
-                className='link'
-                href='#'
-                onClick={e => {
-                  e.preventDefault();
-                  handleExternalLink(
-                    'https://reactnative.dev/docs/debugging#accessing-the-in-app-developer-menu'
-                  );
+          <div
+            style={{
+              padding: '0.5rem',
+              display: 'inline-block',
+              position: 'absolute',
+              right: '0.5rem',
+              top: '0.5rem',
+              borderRadius: '0.25rem',
+              backgroundColor: 'rgba(0, 1, 2, 0.6)',
+              color: 'white',
+              border: 'none',
+              fontWeight: 100,
+              fontStyle: 'italic',
+            }}
+          >
+            Waiting for React to connect…
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'stretch',
+              justifyContent: 'center',
+              padding: '1rem',
+              WebkitAppRegion: 'none',
+            }}
+          >
+            <div
+              style={{
+                textAlign: 'center',
+                borderRadius: '0.5rem',
+                backgroundColor: '#f7f7f7',
+                border: '1px solid #eee',
+                color: '#777d88',
+                padding: '1rem',
+                marginTop: '1rem',
+              }}
+            >
+              <div
+                style={{
+                  textAlign: 'center',
+                  color: '#5f6673',
+                  fontSize: '1.25rem',
+                  marginBottom: '0.5rem',
                 }}
               >
-                in-app developer menu
-              </a>{' '}
-              to connect.
-            </div>
-          </div>
-
-          <div className='box'>
-            <div className='box-header'>React DOM</div>
-            <div className='box-content'>
-              <div className={`prompt ${showConfirmation ? 'hidden' : ''}`}>
-                Add one of the following (click to copy):
+                React Native
               </div>
-              <div className={`confirmation ${showConfirmation ? '' : 'hidden'}`}>
-                Copied to clipboard.
+              <div style={{ lineHeight: '1.5rem' }}>
+                Open the{' '}
+                <a
+                  href='#'
+                  onClick={e => {
+                    e.preventDefault();
+                    handleExternalLink(
+                      'https://reactnative.dev/docs/debugging#accessing-the-in-app-developer-menu'
+                    );
+                  }}
+                  style={{
+                    color: '#1478fa',
+                    textDecoration: 'none',
+                  }}
+                >
+                  in-app developer menu
+                </a>{' '}
+                to connect.
               </div>
-              <span
-                className='input'
-                onClick={() =>
-                  handleCopyClick(`<script src="${(window as any).serverUrl}"></script>`)
-                }
-                style={{ cursor: 'pointer' }}
-              >
-                {`<script src="${(window as any).serverUrl || 'http://localhost:8097'}"></script>`}
-              </span>
-              <span
-                className='input'
-                onClick={() =>
-                  handleCopyClick(`<script src="${(window as any).serverUrlIp}"></script>`)
-                }
-                style={{ cursor: 'pointer' }}
-              >
-                {`<script src="${(window as any).serverUrlIp || 'http://localhost:8097'}"></script>`}
-              </span>
-              to the top of the page you want to debug,
-              <br />
-              <strong>before</strong> importing React DOM.
             </div>
-          </div>
 
-          <div className='box'>
-            <div className='box-header'>Profiler</div>
-            <div className='box-content'>
-              Open the{' '}
-              <a
-                className='link'
-                href='#'
-                onClick={e => {
-                  e.preventDefault();
-                  handleProfilerClick();
+            <div
+              style={{
+                textAlign: 'center',
+                borderRadius: '0.5rem',
+                backgroundColor: '#f7f7f7',
+                border: '1px solid #eee',
+                color: '#777d88',
+                padding: '1rem',
+                marginTop: '1rem',
+              }}
+            >
+              <div
+                style={{
+                  textAlign: 'center',
+                  color: '#5f6673',
+                  fontSize: '1.25rem',
+                  marginBottom: '0.5rem',
                 }}
               >
-                Profiler tab
-              </a>{' '}
-              to inspect saved profiles.
+                React DOM
+              </div>
+              <div style={{ lineHeight: '1.5rem' }}>
+                <div style={{ marginBottom: '0.25rem' }}>
+                  Add one of the following (click to copy):
+                </div>
+                <span
+                  onClick={() =>
+                    handleCopyClick(`<script src="${(window as any).serverUrl}"></script>`)
+                  }
+                  style={{
+                    display: 'block',
+                    fontWeight: 100,
+                    padding: '0 0.25rem',
+                    border: '1px solid #aaa',
+                    backgroundColor: '#fff',
+                    color: '#666',
+                    margin: '0.5rem 0',
+                    userSelect: 'all',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {`<script src="${(window as any).serverUrl || 'http://localhost:8098'}"></script>`}
+                </span>
+                <span
+                  onClick={() =>
+                    handleCopyClick(`<script src="${(window as any).serverUrlIp}"></script>`)
+                  }
+                  style={{
+                    display: 'block',
+                    fontWeight: 100,
+                    padding: '0 0.25rem',
+                    border: '1px solid #aaa',
+                    backgroundColor: '#fff',
+                    color: '#666',
+                    margin: '0.5rem 0',
+                    userSelect: 'all',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {`<script src="${(window as any).serverUrlIp || 'http://localhost:8098'}"></script>`}
+                </span>
+                to the top of the page you want to debug,
+                <br />
+                <strong>before</strong> importing React DOM.
+              </div>
+            </div>
+
+            <div
+              style={{
+                textAlign: 'center',
+                borderRadius: '0.5rem',
+                backgroundColor: '#f7f7f7',
+                border: '1px solid #eee',
+                color: '#777d88',
+                padding: '1rem',
+                marginTop: '1rem',
+              }}
+            >
+              <div
+                style={{
+                  textAlign: 'center',
+                  color: '#5f6673',
+                  fontSize: '1.25rem',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Profiler
+              </div>
+              <div style={{ lineHeight: '1.5rem' }}>
+                Open the{' '}
+                <a
+                  href='#'
+                  onClick={e => {
+                    e.preventDefault();
+                    handleProfilerClick();
+                  }}
+                  style={{
+                    color: '#1478fa',
+                    textDecoration: 'none',
+                  }}
+                >
+                  Profiler tab
+                </a>{' '}
+                to inspect saved profiles.
+              </div>
+            </div>
+
+            <div
+              style={{
+                textAlign: 'center',
+                marginTop: '1rem',
+              }}
+            >
+              {loadingStatus}
             </div>
           </div>
-
-          <div id='loading-status'>{loadingStatus}</div>
         </div>
-      </div>
-
-      <style jsx>{`
-        .react-devtools-container {
-          height: 100%;
-          font-family: sans-serif;
-          background-color: #fff;
-          color: #777d88;
-        }
-
-        .waiting-header {
-          padding: 0.5rem;
-          display: inline-block;
-          position: absolute;
-          right: 0.5rem;
-          top: 0.5rem;
-          border-radius: 0.25rem;
-          background-color: rgba(0, 1, 2, 0.6);
-          color: white;
-          border: none;
-          font-weight: 100;
-          font-style: italic;
-        }
-
-        .box {
-          text-align: center;
-          border-radius: 0.5rem;
-          background-color: #f7f7f7;
-          border: 1px solid #eee;
-          color: #777d88;
-          padding: 1rem;
-          margin-top: 1rem;
-        }
-
-        .box:first-of-type {
-          margin-top: 0;
-        }
-
-        .box-header {
-          text-align: center;
-          color: #5f6673;
-          font-size: 1.25rem;
-          margin-bottom: 0.5rem;
-        }
-
-        .box-content {
-          line-height: 1.5rem;
-        }
-
-        .input {
-          display: block;
-          font-weight: 100;
-          padding: 0 0.25rem;
-          border: 1px solid #aaa;
-          background-color: #fff;
-          color: #666;
-          margin: 0.5rem 0;
-          user-select: all;
-        }
-
-        .link {
-          color: #1478fa;
-          text-decoration: none;
-        }
-
-        .link:hover {
-          text-decoration: underline;
-        }
-
-        .prompt,
-        .confirmation {
-          margin-bottom: 0.25rem;
-        }
-
-        .confirmation {
-          font-style: italic;
-        }
-
-        .hidden {
-          display: none;
-        }
-
-        #loading-status {
-          text-align: center;
-          margin-top: 1rem;
-        }
-      `}</style>
+      )}
     </div>
   );
 };

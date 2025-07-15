@@ -2,19 +2,7 @@ import { electronAPI } from '@electron-toolkit/preload';
 import { contextBridge, clipboard, shell } from 'electron';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-
-// internal-ip 패키지 설치 필요: npm install internal-ip
-let internalIP: any;
-try {
-  internalIP = require('internal-ip');
-} catch (err) {
-  console.warn('internal-ip 패키지가 설치되지 않았습니다. IP 주소 기능이 제한됩니다.');
-  internalIP = {
-    v4: {
-      sync: () => 'localhost',
-    },
-  };
-}
+import { internalIpV4Sync } from 'internal-ip';
 
 // React DevTools 관련 API
 const getDevTools = () => {
@@ -86,7 +74,7 @@ const api = {
   electron: { clipboard, shell },
 
   ip: {
-    address: internalIP.v4.sync(),
+    address: internalIpV4Sync(),
   },
 
   getDevTools: getDevTools,
@@ -97,7 +85,7 @@ const api = {
 // Expose protected methods so that render process does not need unsafe node integration
 contextBridge.exposeInMainWorld('api', {
   electron: { clipboard, shell },
-  ip: { address: internalIP.v4.sync() },
+  ip: { address: internalIpV4Sync() },
   getDevTools: getDevTools,
   readEnv: readEnv,
 });

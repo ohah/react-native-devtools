@@ -1,7 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import counterReducer from './counterSlice';
 import todoReducer from './todoSlice';
-import './devToolsExtension'; // DevTools Extension 주입
+import '@ohah/react-native-devtools';
 
 export const store = configureStore({
   reducer: {
@@ -9,7 +9,6 @@ export const store = configureStore({
     todos: todoReducer,
   },
   devTools: {
-    // React Native 환경에서 DevTools 설정
     name: 'React Native App',
   },
 });

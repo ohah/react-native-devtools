@@ -14,7 +14,7 @@
     "immer": "^10.1.1",
     "react": "18.2.0",
     "react-native": "0.72.0",
-    "react-native-devtools": "file:../../packages/react-native-devtools",
+    "@ohah/react-native-devtools": "workspace:*",
     "react-redux": "^9.2.0",
     "redux": "^5.0.1",
     "redux-thunk": "^3.1.0",

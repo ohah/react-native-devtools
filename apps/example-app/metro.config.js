@@ -14,9 +14,13 @@ const config = {
     nodeModulesPaths: [
       path.resolve(__dirname, 'node_modules'),
       path.resolve(__dirname, '../../node_modules'),
+      path.resolve(__dirname, '../../packages'), // 이 줄 추가
     ],
   },
-  watchFolders: [path.resolve(__dirname, '../../node_modules')],
+  watchFolders: [
+    path.resolve(__dirname, '../../node_modules'),
+    path.resolve(__dirname, '../../packages'),
+  ],
 };
 
 module.exports = mergeConfig(getDefaultConfig(__dirname), config);

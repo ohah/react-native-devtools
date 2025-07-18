@@ -1,9 +1,9 @@
 {
-  "name": "react-native-devtools",
+  "name": "@ohah/react-native-devtools",
   "version": "0.0.1",
   "description": "React Native Devtools Library",
   "main": "src/index.ts",
-  "types": "src/index.d.ts",
+  "types": "src/index.ts",
   "author": "ohah (bookyoon173@gmail.com)",
   "license": "MIT",
   "homepage": "https://github.com/ohah/react-native-devtools",
@@ -12,5 +12,8 @@
     "ios": {
       "sourceDir": "./ios"
     }
+  },
+  "dependencies": {
+    "redux": "5.0.1"
   }
 }

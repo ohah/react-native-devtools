@@ -4,6 +4,8 @@ import { Provider } from 'react-redux';
 import { createDevTools } from '@redux-devtools/core';
 import { DockMonitor } from '@redux-devtools/dock-monitor';
 import { LogMonitor } from '@redux-devtools/log-monitor';
+import { PersistGate } from 'redux-persist/integration/react';
+import { Root } from './redux-devtools-app';
 
 // ============================================================================
 // @redux-devtools/dock-monitor 실제 구현
@@ -149,6 +151,9 @@ const ReduxDevToolsExample: React.FC = () => {
 
   return (
     <div className='p-6 mx-auto h-full overflow-y-auto w-full'>
+      <Provider store={store}>
+        <Root />
+      </Provider>
       <h1 className='text-3xl font-bold mb-6 text-white'>@redux-devtools/dock-monitor 실제 동작</h1>
 
       {/* 실제 DockMonitor DevTools */}

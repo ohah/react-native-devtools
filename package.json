@@ -11,15 +11,20 @@
   },
   "devDependencies": {
     "prettier": "^3.6.2",
-    "turbo": "^2.5.4",
     "rimraf": "^6.0.1",
+    "turbo": "^2.5.4",
     "typescript": "5.8.3"
   },
   "pnpm": {
     "enablePrePostScripts": true,
     "patchedDependencies": {
       "react-native": "patches/react-native.patch"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@tailwindcss/oxide",
+      "electron",
+      "esbuild"
+    ]
   },
   "packageManager": "pnpm@10.13.1",
   "engines": {

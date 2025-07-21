@@ -32,6 +32,7 @@
     "@redux-devtools/slider-monitor": "^5.1.1",
     "@redux-devtools/ui": "^1.4.0",
     "@reduxjs/toolkit": "^2.8.2",
+    "@rjsf/core": "^5.24.12",
     "@tailwindcss/vite": "^4.1.11",
     "adm-zip": "^0.5.16",
     "chrome-devtools-frontend": "^1.0.676721",
@@ -40,6 +41,7 @@
     "clsx": "^2.1.1",
     "internal-ip": "^8.0.0",
     "jsan": "^3.1.14",
+    "json-schema": "^0.4.0",
     "localforage": "^1.10.0",
     "lucide-react": "^0.525.0",
     "react-devtools-core": "^4.28.5",
@@ -64,8 +66,8 @@
     "electron-vite": "^3.1.0",
     "fs-extra": "^11.3.0",
     "oxlint": "^1.5.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
     "typescript": "^5.8.3",
     "vite": "^6.2.6"
   }
